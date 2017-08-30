@@ -1,0 +1,20 @@
+{
+  "name": "react-native-amap3d",
+  "version": "0.3.3",
+  "description": "react-native 高德地图组件",
+  "author": "Qiu Xiang <i@7c00.cc>",
+  "license": "MIT",
+  "keywords": [
+    "react-native",
+    "amap",
+    "maps"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qiuxiang/react-native-amap3d"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  }
+}
