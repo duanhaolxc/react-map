@@ -1,7 +1,9 @@
 package cn.qiuxiang.react.amap3d.maps
 
 import android.content.Context
+import android.graphics.Color
 import android.view.View
+import cn.qiuxiang.react.amap3d.R
 import com.amap.api.maps.AMap
 import com.amap.api.maps.CameraUpdateFactory
 import com.amap.api.maps.TextureMapView
@@ -23,6 +25,9 @@ class AMapView(context: Context) : TextureMapView(context) {
     private val locationStyle by lazy {
         val locationStyle = MyLocationStyle()
         locationStyle.myLocationType(locationType)
+        locationStyle.radiusFillColor(Color.TRANSPARENT)
+        locationStyle.strokeColor(Color.TRANSPARENT)
+        locationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.location_icon))
         locationStyle
     }
 

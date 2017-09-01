@@ -2,6 +2,8 @@ package cn.qiuxiang.react.amap3d.maps
 
 import android.content.Context
 import android.graphics.Color
+import android.util.Log
+import cn.qiuxiang.react.amap3d.utils.Douglas
 import com.amap.api.maps.AMap
 import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.Polyline
@@ -47,13 +49,42 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
 
     private var coordinates: ArrayList<LatLng> = ArrayList()
     private var colors: ArrayList<Int> = ArrayList()
-
+    /**
+     * 实时定位展示运动轨迹
+     */
+    internal var builder = StringBuilder()
+    internal var d = Douglas()
+    private var polylineRunningOptions: PolylineOptions? = null
     fun setCoordinates(coordinates: ReadableArray) {
         this.coordinates = ArrayList((0 until coordinates.size())
                 .map { coordinates.getMap(it) }
                 .map { LatLng(it.getDouble("latitude"), it.getDouble("longitude")) })
 
-        polyline?.points = this.coordinates
+        for (i in this.coordinates.indices) {
+            if (i == 0) {//拆分坐标
+                builder.append("LINESTRING(" + this.coordinates[i].latitude + " " + this.coordinates[i].longitude)
+            } else {
+                builder.append("," + this.coordinates[i].latitude + " " + this.coordinates[i].longitude)
+            }
+
+            if (i == this.coordinates.size - 1) {
+
+                builder.append(")")
+            }
+        }
+        d.readPoint(builder)
+        d.compress(d.points!![0], d.points!![d.points!!.size - 1])
+        for (i in d.points!!.indices) {
+            if (d.points!![i].index > -1) {
+
+                if (polylineRunningOptions == null) {
+                    polylineRunningOptions = PolylineOptions()
+                }
+                polylineRunningOptions!!.add(LatLng(d.points!![i].x, d.points!![i].y))
+            }
+        }
+        polyline?.options = polylineRunningOptions
+        builder.setLength(0)
     }
 
     fun setColors(colors: ReadableArray) {
@@ -61,8 +92,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
     }
 
     fun addToMap(map: AMap) {
-        polyline = map.addPolyline(PolylineOptions()
-                .addAll(coordinates)
+        polyline = map.addPolyline(polylineRunningOptions!!
                 .color(color)
                 .colorValues(colors)
                 .width(width)
@@ -70,5 +100,6 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                 .geodesic(geodesic)
                 .setDottedLine(dashed)
                 .zIndex(zIndex))
+
     }
 }
