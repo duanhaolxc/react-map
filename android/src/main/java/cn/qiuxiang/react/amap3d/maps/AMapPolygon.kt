@@ -2,8 +2,11 @@ package cn.qiuxiang.react.amap3d.maps
 
 import android.content.Context
 import android.graphics.Color
+import cn.qiuxiang.react.amap3d.utils.MapTools
 import com.amap.api.maps.AMap
+import com.amap.api.maps.CameraUpdateFactory
 import com.amap.api.maps.model.LatLng
+import com.amap.api.maps.model.LatLngBounds
 import com.amap.api.maps.model.Polygon
 import com.amap.api.maps.model.PolygonOptions
 import com.facebook.react.bridge.ReadableArray
@@ -54,5 +57,6 @@ class AMapPolygon(context: Context) : ReactViewGroup(context) {
                 .strokeWidth(strokeWidth)
                 .fillColor(fillColor)
                 .zIndex(zIndex))
+        MapTools().getLatLngBounds(coordinates,map)
     }
 }

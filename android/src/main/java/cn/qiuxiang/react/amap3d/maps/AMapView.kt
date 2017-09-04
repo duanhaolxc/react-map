@@ -21,7 +21,8 @@ class AMapView(context: Context) : TextureMapView(context) {
     private val polylines = HashMap<String, AMapPolyline>()
     private val polygons = HashMap<String, AMapPolygon>()
     private val circles = HashMap<String, AMapCircle>()
-    private var locationType = MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE
+    private var isFirst = true
+    private var locationType = MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE_NO_CENTER
     private val locationStyle by lazy {
         val locationStyle = MyLocationStyle()
         locationStyle.myLocationType(locationType)
@@ -52,6 +53,12 @@ class AMapView(context: Context) : TextureMapView(context) {
         }
 
         map.setOnMyLocationChangeListener { location ->
+            if (location.accuracy > 0 && isFirst) {
+                map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(
+                        location.latitude,
+                        location.longitude)))
+                isFirst = false
+            }
             val event = Arguments.createMap()
             event.putDouble("latitude", location.latitude)
             event.putDouble("longitude", location.longitude)
@@ -82,7 +89,7 @@ class AMapView(context: Context) : TextureMapView(context) {
             }
         })
 
-        map.setOnCameraChangeListener(object: AMap.OnCameraChangeListener {
+        map.setOnCameraChangeListener(object : AMap.OnCameraChangeListener {
             override fun onCameraChangeFinish(position: CameraPosition?) {
                 emitCameraChangeEvent("onStatusChangeComplete", position)
             }
@@ -131,7 +138,7 @@ class AMapView(context: Context) : TextureMapView(context) {
         polylines.put(polyline.polyline?.id!!, polyline)
     }
 
-    fun  addPolygon(polygon: AMapPolygon) {
+    fun addPolygon(polygon: AMapPolygon) {
         polygon.addToMap(map)
         polygons.put(polygon.polygon?.id!!, polygon)
     }
@@ -166,7 +173,7 @@ class AMapView(context: Context) : TextureMapView(context) {
         }
     }
 
-    private val animateCallback = object: AMap.CancelableCallback {
+    private val animateCallback = object : AMap.CancelableCallback {
         override fun onCancel() {
             emit(id, "onAnimateCancel")
         }

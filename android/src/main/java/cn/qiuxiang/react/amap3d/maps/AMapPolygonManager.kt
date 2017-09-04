@@ -1,5 +1,6 @@
 package cn.qiuxiang.react.amap3d.maps
 
+import android.util.Log
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewGroupManager
