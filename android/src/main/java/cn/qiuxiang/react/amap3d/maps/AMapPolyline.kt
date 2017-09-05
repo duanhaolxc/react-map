@@ -15,7 +15,7 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.views.view.ReactViewGroup
 
 class AMapPolyline(context: Context) : ReactViewGroup(context) {
-    var polyline: Polyline? = null
+   var polyline: Polyline? = null
         private set
 
     var width: Float = 1f
@@ -66,14 +66,6 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                 .map {
                     LatLongData(it.getDouble("latitude"), it.getDouble("longitude"), if (it.hasKey("speer")) it.getDouble("speer") else 0.0)
                 })
-
-    }
-
-    fun setColors(colors: ReadableArray) {
-        this.colors = ArrayList((0..colors.size() - 1).map { colors.getInt(it) })
-    }
-
-    fun tracePolyLine() {
         for (i in this.coordinates.indices) {
             if (i == 0) {//拆分坐标
                 builder.append("LINESTRING(" + this.coordinates[i].lattitude + " " + this.coordinates[i].longitude)
@@ -94,16 +86,18 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                 if (polylineRunningOptions == null) {
                     polylineRunningOptions = PolylineOptions()
                 }
-                polyLines!!.add(LatLng(d.points!![i].x, d.points!![i].y))
+                polylineRunningOptions!!.add(LatLng(d.points!![i].x, d.points!![i].y))
             }
         }
-        polylineRunningOptions!!.addAll(polyLines)
         polyline?.options = polylineRunningOptions
         builder.setLength(0)
+
     }
 
+    fun setColors(colors: ReadableArray) {
+        this.colors = ArrayList((0..colors.size() - 1).map { colors.getInt(it) })
+    }
     fun polyLine() {
-        if (polylineRunningOptions == null) {
             polylineRunningOptions = PolylineOptions()
             for (i in this.coordinates.indices) {
                 var speer = this.coordinates[i].speer
@@ -123,14 +117,11 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                 }
             }
             polylineRunningOptions!!.addAll(PathSmoothTool().pathOptimize(polyLines))
-        }
     }
 
     fun addToMap(map: AMap) {
-        if (this.colors.size > 0) {
+        if (this.colors.size>0){
             polyLine()
-        } else {
-            tracePolyLine()
         }
         polyline = map.addPolyline(polylineRunningOptions!!
                 .color(color)
