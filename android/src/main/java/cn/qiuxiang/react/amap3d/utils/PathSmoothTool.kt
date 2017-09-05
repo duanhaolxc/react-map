@@ -21,10 +21,10 @@ class PathSmoothTool {
      * @return 优化后轨迹list
      */
     fun pathOptimize(originlist: List<LatLng>): List<LatLng>? {
-
+//        Log.i("MY","list: "+originlist.size)
         val list = removeNoisePoint(originlist)//去噪
         val afterList = kalmanFilterPath(list, intensity)//滤波
-        //        Log.i("MY","list: "+list.size());
+
         //        Log.i("MY","afterList: "+afterList.size());
         //        Log.i("MY","pathoptimizeList: "+pathoptimizeList.size());
         return reducerVerticalThreshold(afterList, threshhold)
@@ -195,7 +195,7 @@ class PathSmoothTool {
                 ret.add(cur)
             }
         }
-        Log.i("MY","originlist: "+ret)
+//        Log.i("MY","originlist: "+ret.size)
         return ret
     }
 

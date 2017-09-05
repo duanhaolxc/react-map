@@ -5,6 +5,8 @@ import android.graphics.Color
 import android.util.Log
 import cn.qiuxiang.react.amap3d.utils.Douglas
 import cn.qiuxiang.react.amap3d.utils.LatLongData
+import cn.qiuxiang.react.amap3d.utils.MapTools
+import cn.qiuxiang.react.amap3d.utils.PathSmoothTool
 import com.amap.api.maps.AMap
 import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.Polyline
@@ -62,7 +64,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
         this.coordinates = ArrayList((0 until coordinates.size())
                 .map { coordinates.getMap(it) }
                 .map {
-                    LatLongData(it.getDouble("latitude"), it.getDouble("longitude"), it.getDouble("speer"))
+                    LatLongData(it.getDouble("latitude"), it.getDouble("longitude"), if (it.hasKey("speer")) it.getDouble("speer") else 0.0)
                 })
 
     }
@@ -105,7 +107,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
             polylineRunningOptions = PolylineOptions()
             for (i in this.coordinates.indices) {
                 var speer = this.coordinates[i].speer
-                polylineRunningOptions!!.add(LatLng(this.coordinates[i].lattitude, this.coordinates[i].longitude))
+                polyLines.add(LatLng(this.coordinates[i].lattitude, this.coordinates[i].longitude))
                 if (0 < speer && speer < 2)
                     PolyLineColors.add(PolyLineColors.size, this.colors[0])
                 else if (2 < speer && speer < 4) {
@@ -120,6 +122,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                     PolyLineColors.add(PolyLineColors.size,this.colors[5])
                 }
             }
+            polylineRunningOptions!!.addAll(PathSmoothTool().pathOptimize(polyLines))
         }
     }
 
@@ -137,6 +140,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                 .geodesic(geodesic)
                 .setDottedLine(dashed)
                 .zIndex(zIndex))
+        MapTools().getLatLngBounds(polylineRunningOptions!!.points,map)
 
     }
 }
