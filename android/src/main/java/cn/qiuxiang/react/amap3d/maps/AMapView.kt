@@ -63,6 +63,7 @@ class AMapView(context: Context) : TextureMapView(context) {
             event.putDouble("latitude", location.latitude)
             event.putDouble("longitude", location.longitude)
             event.putDouble("accuracy", location.accuracy.toDouble())
+            event.putDouble("speer",location.speed.toDouble())
             emit(id, "onLocation", event)
         }
 
