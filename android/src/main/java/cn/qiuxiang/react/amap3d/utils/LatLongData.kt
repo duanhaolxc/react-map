@@ -1,6 +1,6 @@
 package cn.qiuxiang.react.amap3d.utils
 
-class LatLongData(var lattitude: Double//维度
+class LatLongData(var latitude: Double//维度
                   , var longitude: Double//经度
-                  , var speer: Double//速度
+                  , var speed: Double//速度
 )

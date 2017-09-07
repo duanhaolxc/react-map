@@ -10,7 +10,7 @@ class Point
  * 点的Y坐标
  * @param index 点所属的曲线的索引
  */
-(x: Double, y: Double, index: Int,speer:Double) {
+(x: Double, y: Double, index: Int,speed:Double) {
     /**
      * 点的X坐标
      */
@@ -25,13 +25,13 @@ class Point
      * 点所属的曲线的索引
      */
     var index = 0
-    var speer=0.0
+    var speed=0.0
 
     init {
         this.x = x
         this.y = y
         this.index = index
-        this.speer=speer
+        this.speed=speed
     }
 
     override fun toString(): String {
