@@ -59,12 +59,15 @@ class AMapView(context: Context) : TextureMapView(context) {
                         location.longitude)))
                 isFirst = false
             }
-            val event = Arguments.createMap()
-            event.putDouble("latitude", location.latitude)
-            event.putDouble("longitude", location.longitude)
-            event.putDouble("accuracy", location.accuracy.toDouble())
-            event.putDouble("speed",location.speed.toDouble())
-            emit(id, "onLocation", event)
+            if (location.accuracy < 50) {
+                val event = Arguments.createMap()
+                event.putDouble("latitude", location.latitude)
+                event.putDouble("longitude", location.longitude)
+                event.putDouble("accuracy", location.accuracy.toDouble())
+                event.putDouble("speed", location.speed.toDouble())
+                emit(id, "onLocation", event)
+            }
+
         }
 
         map.setOnMarkerClickListener { marker ->
