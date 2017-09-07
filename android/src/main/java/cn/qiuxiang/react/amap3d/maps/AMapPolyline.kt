@@ -56,12 +56,12 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
     /**
      * 实时定位展示运动轨迹
      */
-    private var polylineRunningOptions=PolylineOptions()
+    private var polylineOptions: ArrayList<LatLng>? = null
     fun setCoordinates(coordinates: ReadableArray) {
         this.coordinates = ArrayList((0 until coordinates.size())
                 .map { coordinates.getMap(it) }
                 .map {
-                    LatLongData(it.getDouble("latitude"), it.getDouble("longitude"), if (it.hasKey("speed")) it.getDouble("speed") else 3.0)
+                    LatLongData(it.getDouble("latitude"), it.getDouble("longitude"), if (it.hasKey("speed")) it.getDouble("speed") else 0.0)
                 })
         fixPolyLines()
     }
@@ -72,7 +72,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
     }
 
     fun addToMap(map: AMap) {
-        polyline = map.addPolyline(PolylineOptions().addAll(PathSmoothTool().pathOptimize(polylineRunningOptions!!.points))
+        polyline = map.addPolyline(PolylineOptions().addAll(polylineOptions)
                 .color(color)
                 .colorValues(PolyLineColors)
                 .width(width)
@@ -80,31 +80,36 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                 .geodesic(geodesic)
                 .setDottedLine(dashed)
                 .zIndex(zIndex))
-        MapTools().getLatLngBounds(polylineRunningOptions!!.points, map)
+        MapTools().getLatLngBounds(polylineOptions!!, map)
 
     }
 
     private fun fixPolyLines() {
-        if (this.coordinates.size>0)
-        for (i in this.coordinates.indices) {
-            polylineRunningOptions!!.add(LatLng(this.coordinates[i].latitude,this.coordinates[i].longitude))
-            var speed = this.coordinates[i].speed
-            if (this.colors.size > 0) {
-                if (0 < speed && speed < 2)
-                    PolyLineColors.add(PolyLineColors.size, this.colors[0])
-                else if (2 < speed && speed < 4) {
-                    PolyLineColors.add(PolyLineColors.size, this.colors[1])
-                } else if (4 < speed && speed < 6) {
-                    PolyLineColors.add(PolyLineColors.size, this.colors[2])
-                } else if (6 < speed && speed < 7) {
-                    PolyLineColors.add(PolyLineColors.size, this.colors[3])
-                } else if (7 < speed && speed < 10) {
-                    PolyLineColors.add(PolyLineColors.size, this.colors[4])
-                } else {
-                    PolyLineColors.add(PolyLineColors.size, this.colors[5])
+        if (this.coordinates.size>0&&this.colors.size > 0){
+            if (polylineOptions == null) {
+                polylineOptions = ArrayList()
+            }
+            for (i in this.coordinates.indices) {
+                polylineOptions!!.add(LatLng(this.coordinates[i].latitude,this.coordinates[i].longitude))
+                var speed = this.coordinates[i].speed
+                if (this.colors.size > 0) {
+                    if (0 < speed && speed < 2)
+                        PolyLineColors.add(PolyLineColors.size, this.colors[0])
+                    else if (2 < speed && speed < 4) {
+                        PolyLineColors.add(PolyLineColors.size, this.colors[1])
+                    } else if (4 < speed && speed < 6) {
+                        PolyLineColors.add(PolyLineColors.size, this.colors[2])
+                    } else if (6 < speed && speed < 7) {
+                        PolyLineColors.add(PolyLineColors.size, this.colors[3])
+                    } else if (7 < speed && speed < 10) {
+                        PolyLineColors.add(PolyLineColors.size, this.colors[4])
+                    } else {
+                        PolyLineColors.add(PolyLineColors.size, this.colors[5])
+                    }
                 }
             }
+            polyline?.points = PathSmoothTool().pathOptimize(polylineOptions!!)
         }
-        polyline?.options = polylineRunningOptions
+
     }
 }
