@@ -56,7 +56,7 @@ class Douglas {
         }
 
         for (i in coords!!.indices) {
-            p = Point(coords!![i].x, coords!![i].y, i)
+            p = Point(coords!![i].x, coords!![i].y, i,0.0)
             points!!.add(p!!)
         }
     }
