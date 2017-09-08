@@ -86,25 +86,28 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
 
     private fun fixPolyLines() {
         if (this.coordinates.size>0&&this.colors.size > 0){
-            if (polylineOptions == null) {
-                polylineOptions = ArrayList()
+            if (polylineOptions==null){
+                polylineOptions=ArrayList()
             }
             for (i in this.coordinates.indices) {
                 polylineOptions!!.add(LatLng(this.coordinates[i].latitude,this.coordinates[i].longitude))
                 var speed = this.coordinates[i].speed
                 if (this.colors.size > 0) {
-                    if (0 < speed && speed < 2)
+                    if (speed in 0 ..2)
                         PolyLineColors.add(PolyLineColors.size, this.colors[0])
-                    else if (2 < speed && speed < 4) {
+                    else if (speed in 2 ..4) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[1])
-                    } else if (4 < speed && speed < 6) {
+                    } else if (speed in 4 ..6) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[2])
-                    } else if (6 < speed && speed < 7) {
+                    } else if (speed in 6 ..7) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[3])
-                    } else if (7 < speed && speed < 10) {
+                    } else if (speed in 7 ..10) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[4])
-                    } else {
-                        PolyLineColors.add(PolyLineColors.size, this.colors[5])
+                    } else if (speed>10) {
+                        PolyLineColors.add(PolyLineColors.size, this.colors[4])
+                    }
+                    else {
+                        PolyLineColors.add(PolyLineColors.size, this.colors[0])
                     }
                 }
             }
