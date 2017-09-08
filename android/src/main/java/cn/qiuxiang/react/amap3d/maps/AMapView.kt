@@ -59,7 +59,7 @@ class AMapView(context: Context) : TextureMapView(context) {
                         location.longitude)))
                 isFirst = false
             }
-            if (location.accuracy < 50) {
+            if (location.accuracy < 10) {
                 val event = Arguments.createMap()
                 event.putDouble("latitude", location.latitude)
                 event.putDouble("longitude", location.longitude)
