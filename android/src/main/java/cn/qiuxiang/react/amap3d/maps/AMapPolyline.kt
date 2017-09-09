@@ -3,7 +3,6 @@ package cn.qiuxiang.react.amap3d.maps
 import android.content.Context
 import android.graphics.Color
 import android.util.Log
-import cn.qiuxiang.react.amap3d.utils.Douglas
 import cn.qiuxiang.react.amap3d.utils.LatLongData
 import cn.qiuxiang.react.amap3d.utils.MapTools
 import cn.qiuxiang.react.amap3d.utils.PathSmoothTool
@@ -14,8 +13,9 @@ import com.amap.api.maps.model.PolylineOptions
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.views.view.ReactViewGroup
 
+
 class AMapPolyline(context: Context) : ReactViewGroup(context) {
-   var polyline: Polyline? = null
+    var polyline: Polyline? = null
         private set
 
     var width: Float = 1f
@@ -53,10 +53,12 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
     private var coordinates: ArrayList<LatLongData> = ArrayList()
     private var colors: ArrayList<Int> = ArrayList()
     private var PolyLineColors: ArrayList<Int> = ArrayList()
+    private lateinit var map: AMap
     /**
      * 实时定位展示运动轨迹
      */
     private var polylineOptions: ArrayList<LatLng>? = null
+
     fun setCoordinates(coordinates: ReadableArray) {
         this.coordinates = ArrayList((0 until coordinates.size())
                 .map { coordinates.getMap(it) }
@@ -72,6 +74,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
     }
 
     fun addToMap(map: AMap) {
+        this.map=map
         polyline = map.addPolyline(PolylineOptions().addAll(polylineOptions)
                 .color(color)
                 .colorValues(PolyLineColors)
@@ -85,33 +88,32 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
     }
 
     private fun fixPolyLines() {
-        if (this.coordinates.size>0&&this.colors.size > 0){
-            if (polylineOptions==null){
-                polylineOptions=ArrayList()
-            }
+        if (this.coordinates.size > 0 && this.colors.size > 0) {
+            polylineOptions = ArrayList()
             for (i in this.coordinates.indices) {
-                polylineOptions!!.add(LatLng(this.coordinates[i].latitude,this.coordinates[i].longitude))
+                polylineOptions!!.add(LatLng(this.coordinates[i].latitude, this.coordinates[i].longitude))
                 var speed = this.coordinates[i].speed
                 if (this.colors.size > 0) {
-                    if (speed in 0 ..2)
+                    if (0 < speed && speed < 2)
                         PolyLineColors.add(PolyLineColors.size, this.colors[0])
-                    else if (speed in 2 ..4) {
+                    else if (2 < speed && speed < 4) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[1])
-                    } else if (speed in 4 ..6) {
+                    } else if (4 < speed && speed < 6) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[2])
-                    } else if (speed in 6 ..7) {
+                    } else if (6 < speed && speed < 7) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[3])
-                    } else if (speed in 7 ..10) {
+                    } else if (7 < speed && speed < 10) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[4])
-                    } else if (speed>10) {
+                    } else if (speed > 10) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[4])
-                    }
-                    else {
+                    } else {
                         PolyLineColors.add(PolyLineColors.size, this.colors[0])
                     }
                 }
             }
-            polyline?.points = PathSmoothTool().pathOptimize(polylineOptions!!)
+             val mpathSmoothTool = PathSmoothTool()
+             mpathSmoothTool.intensity = 3
+             polyline?.points = mpathSmoothTool.pathOptimize(polylineOptions!!)
         }
 
     }
