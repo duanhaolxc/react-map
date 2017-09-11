@@ -3,7 +3,6 @@ package cn.qiuxiang.react.amap3d.maps
 import android.content.Context
 import android.graphics.Color
 import android.view.View
-import cn.qiuxiang.react.amap3d.R
 import com.amap.api.maps.AMap
 import com.amap.api.maps.CameraUpdateFactory
 import com.amap.api.maps.TextureMapView
@@ -21,14 +20,13 @@ class AMapView(context: Context) : TextureMapView(context) {
     private val polylines = HashMap<String, AMapPolyline>()
     private val polygons = HashMap<String, AMapPolygon>()
     private val circles = HashMap<String, AMapCircle>()
-    private var isFirst = true
-    private var locationType = MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE_NO_CENTER
+    private var locationType = MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE
     private val locationStyle by lazy {
         val locationStyle = MyLocationStyle()
         locationStyle.myLocationType(locationType)
         locationStyle.radiusFillColor(Color.TRANSPARENT)
         locationStyle.strokeColor(Color.TRANSPARENT)
-        locationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.location_icon))
+        locationStyle.showMyLocation(true)
         locationStyle
     }
 
@@ -53,17 +51,16 @@ class AMapView(context: Context) : TextureMapView(context) {
         }
 
         map.setOnMyLocationChangeListener { location ->
-            if (location.accuracy > 0 && isFirst) {
+            if (location.accuracy > 0) {
                 map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(
                         location.latitude,
                         location.longitude)))
-                isFirst = false
             }
             val event = Arguments.createMap()
             event.putDouble("latitude", location.latitude)
             event.putDouble("longitude", location.longitude)
             event.putDouble("accuracy", location.accuracy.toDouble())
-            event.putDouble("speed",location.speed.toDouble())
+            event.putDouble("speed", location.speed.toDouble())
             emit(id, "onLocation", event)
         }
 
@@ -107,7 +104,6 @@ class AMapView(context: Context) : TextureMapView(context) {
         map.setOnPolylineClickListener { polyline ->
             emit(polylines[polyline.id]?.id, "onPress")
         }
-
         map.setInfoWindowAdapter(AMapInfoWindowAdapter(context, markers))
     }
 
@@ -237,3 +233,4 @@ class AMapView(context: Context) : TextureMapView(context) {
         map.myLocationStyle = locationStyle
     }
 }
+
