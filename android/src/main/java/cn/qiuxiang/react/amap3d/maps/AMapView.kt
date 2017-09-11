@@ -11,6 +11,7 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
+import cn.qiuxiang.react.amap3d.R
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.events.RCTEventEmitter
 
@@ -26,6 +27,7 @@ class AMapView(context: Context) : TextureMapView(context) {
         locationStyle.myLocationType(locationType)
         locationStyle.radiusFillColor(Color.TRANSPARENT)
         locationStyle.strokeColor(Color.TRANSPARENT)
+          locationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.location_icon))
         locationStyle.showMyLocation(true)
         locationStyle
     }
