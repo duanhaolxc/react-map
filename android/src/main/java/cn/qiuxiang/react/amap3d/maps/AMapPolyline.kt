@@ -2,7 +2,6 @@ package cn.qiuxiang.react.amap3d.maps
 
 import android.content.Context
 import android.graphics.Color
-import android.util.Log
 import cn.qiuxiang.react.amap3d.utils.LatLongData
 import cn.qiuxiang.react.amap3d.utils.MapTools
 import cn.qiuxiang.react.amap3d.utils.PathSmoothTool
@@ -74,7 +73,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
     }
 
     fun addToMap(map: AMap) {
-        this.map=map
+        this.map = map
         polyline = map.addPolyline(PolylineOptions().addAll(polylineOptions)
                 .color(color)
                 .colorValues(PolyLineColors)
@@ -87,30 +86,30 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
 
     }
 
-   private fun fixPolyLines() {
-        if (this.coordinates.size > 0 && this.colors.size > 0) {
+    private fun fixPolyLines() {
+        if (this.coordinates.size > 0) {
             polylineOptions = ArrayList()
             for (i in this.coordinates.indices) {
                 polylineOptions!!.add(LatLng(this.coordinates[i].latitude, this.coordinates[i].longitude))
-                var speed = this.coordinates[i].speed
                 if (this.colors.size > 0) {
-                    if (0 <= speed && speed < 2)
-                        PolyLineColors.add(PolyLineColors.size, this.colors[0])
-                    else if (2 <= speed && speed < 5) {
-                        PolyLineColors.add(PolyLineColors.size, this.colors[1])
-                    } else if (5 <= speed && speed < 7) {
-                        PolyLineColors.add(PolyLineColors.size, this.colors[2])
-                    }  else if (speed >= 7) {
-                        PolyLineColors.add(PolyLineColors.size, this.colors[2])
-                    } else {
-                        PolyLineColors.add(PolyLineColors.size, this.colors[0])
+                    var speed = this.coordinates[i].speed
+                    if (this.colors.size > 0) {
+                        if (0 <= speed && speed < 2)
+                            PolyLineColors.add(PolyLineColors.size, this.colors[0])
+                        else if (2 <= speed && speed < 5) {
+                            PolyLineColors.add(PolyLineColors.size, this.colors[1])
+                        } else if (5 <= speed && speed < 7) {
+                            PolyLineColors.add(PolyLineColors.size, this.colors[2])
+                        } else if (speed >= 7) {
+                            PolyLineColors.add(PolyLineColors.size, this.colors[2])
+                        }
                     }
                 }
+
             }
-             val mpathSmoothTool = PathSmoothTool()
-             mpathSmoothTool.intensity = 3
-             polyline?.points = mpathSmoothTool.pathOptimize(polylineOptions!!)
+            polyline?.points = PathSmoothTool().pathOptimize(polylineOptions!!)
         }
 
     }
 }
+
