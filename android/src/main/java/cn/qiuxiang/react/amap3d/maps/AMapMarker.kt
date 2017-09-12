@@ -25,7 +25,7 @@ class AMapMarker(context: Context) : ReactViewGroup(context) {
 
     var infoWindow: AMapInfoWindow? = null
 
-    var infoWindowEnabled: Boolean = true
+    var infoWindowEnabled: Boolean = false
         set(value) {
             field = value
             marker?.isInfoWindowEnable = value
