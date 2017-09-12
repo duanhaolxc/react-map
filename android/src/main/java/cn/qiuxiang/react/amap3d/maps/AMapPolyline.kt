@@ -87,29 +87,29 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
     }
 
     private fun fixPolyLines() {
-        if (this.coordinates.size > 0) {
+        if (this.coordinates.size > 0 && this.colors.size > 0) {
             polylineOptions = ArrayList()
             for (i in this.coordinates.indices) {
                 polylineOptions!!.add(LatLng(this.coordinates[i].latitude, this.coordinates[i].longitude))
                 if (this.colors.size > 0) {
                     var speed = this.coordinates[i].speed
-                    if (this.colors.size > 0) {
-                        if (0 <= speed && speed < 2)
-                            PolyLineColors.add(PolyLineColors.size, this.colors[0])
-                        else if (2 <= speed && speed < 5) {
-                            PolyLineColors.add(PolyLineColors.size, this.colors[1])
-                        } else if (5 <= speed && speed < 7) {
-                            PolyLineColors.add(PolyLineColors.size, this.colors[2])
-                        } else if (speed >= 7) {
-                            PolyLineColors.add(PolyLineColors.size, this.colors[2])
-                        }
+                    if (0 <= speed && speed < 2){
+                        PolyLineColors.add(PolyLineColors.size, this.colors[0])
+                    } else if (2 <= speed && speed < 5) {
+                        PolyLineColors.add(PolyLineColors.size, this.colors[1])
+                    } else if (5 <= speed && speed < 7) {
+                        PolyLineColors.add(PolyLineColors.size, this.colors[2])
+                    } else {
+                        PolyLineColors.add(PolyLineColors.size, this.colors[2])
                     }
+
                 }
 
             }
-            polyline?.points = PathSmoothTool().pathOptimize(polylineOptions!!)
+            val mpathSmoothTool = PathSmoothTool()
+            mpathSmoothTool.intensity = 3
+            polyline?.points = mpathSmoothTool.pathOptimize(polylineOptions!!)
         }
 
     }
 }
-
