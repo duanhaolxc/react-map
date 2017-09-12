@@ -73,7 +73,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
     }
 
     fun addToMap(map: AMap) {
-        this.map = map
+    
         polyline = map.addPolyline(PolylineOptions().addAll(polylineOptions)
                 .color(color)
                 .colorValues(PolyLineColors)
@@ -82,7 +82,11 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                 .geodesic(geodesic)
                 .setDottedLine(dashed)
                 .zIndex(zIndex))
-        MapTools().getLatLngBounds(polylineOptions!!, map)
+         val b = LatLngBounds.builder()
+         polylineOptions!!.indices
+                .map { polylineOptions!![it] }
+                .forEach { b.include(it) }
+         map.moveCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 50))
 
     }
 
