@@ -3,10 +3,11 @@ package cn.qiuxiang.react.amap3d.maps
 import android.content.Context
 import android.graphics.Color
 import cn.qiuxiang.react.amap3d.utils.LatLongData
-import cn.qiuxiang.react.amap3d.utils.MapTools
 import cn.qiuxiang.react.amap3d.utils.PathSmoothTool
 import com.amap.api.maps.AMap
+import com.amap.api.maps.CameraUpdateFactory
 import com.amap.api.maps.model.LatLng
+import com.amap.api.maps.model.LatLngBounds
 import com.amap.api.maps.model.Polyline
 import com.amap.api.maps.model.PolylineOptions
 import com.facebook.react.bridge.ReadableArray
@@ -73,7 +74,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
     }
 
     fun addToMap(map: AMap) {
-    
+
         polyline = map.addPolyline(PolylineOptions().addAll(polylineOptions)
                 .color(color)
                 .colorValues(PolyLineColors)
@@ -82,22 +83,23 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                 .geodesic(geodesic)
                 .setDottedLine(dashed)
                 .zIndex(zIndex))
-         val b = LatLngBounds.builder()
-         polylineOptions!!.indices
-                .map { polylineOptions!![it] }
-                .forEach { b.include(it) }
-         map.moveCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 50))
-
+        val b = LatLngBounds.builder()
+        if (polylineOptions != null) {
+            polylineOptions!!.indices
+                    .map { polylineOptions!![it] }
+                    .forEach { b.include(it) }
+            map.moveCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 50))
+        }
     }
 
     private fun fixPolyLines() {
-        if (this.coordinates.size > 0 && this.colors.size > 0) {
+        if (this.coordinates.size > 0) {
             polylineOptions = ArrayList()
             for (i in this.coordinates.indices) {
                 polylineOptions!!.add(LatLng(this.coordinates[i].latitude, this.coordinates[i].longitude))
                 if (this.colors.size > 0) {
                     var speed = this.coordinates[i].speed
-                    if (0 <= speed && speed < 2){
+                    if (0 <= speed && speed < 2) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[0])
                     } else if (2 <= speed && speed < 5) {
                         PolyLineColors.add(PolyLineColors.size, this.colors[1])
