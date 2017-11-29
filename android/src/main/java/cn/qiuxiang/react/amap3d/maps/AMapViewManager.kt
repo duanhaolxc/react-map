@@ -4,7 +4,6 @@ import android.view.View
 import com.amap.api.maps.AMap
 import com.amap.api.maps.CameraUpdateFactory
 import com.amap.api.maps.model.LatLng
-import com.amap.api.maps.model.MyLocationStyle
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.common.MapBuilder
@@ -66,11 +65,6 @@ internal class AMapViewManager : ViewGroupManager<AMapView>() {
                 "onStatusChangeComplete", MapBuilder.of("registrationName", "onStatusChangeComplete"),
                 "onLocation", MapBuilder.of("registrationName", "onLocation")
         )
-    }
-
-    @ReactProp(name = "locationEnabled")
-    fun setMyLocationEnabled(view: AMapView, enabled: Boolean) {
-        view.setLocationEnabled(enabled)
     }
 
     @ReactProp(name = "showsIndoorMap")
@@ -171,6 +165,11 @@ internal class AMapViewManager : ViewGroupManager<AMapView>() {
                 coordinate.getDouble("longitude"))))
     }
 
+    @ReactProp(name = "coordinates")
+    fun setCoordinates(view: AMapView, coordinates: ReadableArray) {
+        view.setCoordinates(coordinates)
+    }
+
     @ReactProp(name = "limitRegion")
     fun setLimitRegion(view: AMapView, limitRegion: ReadableMap) {
         view.setLimitRegion(limitRegion)
@@ -184,10 +183,5 @@ internal class AMapViewManager : ViewGroupManager<AMapView>() {
     @ReactProp(name = "rotation")
     fun changeRotation(view: AMapView, rotation: Float) {
         view.map.moveCamera(CameraUpdateFactory.changeBearing(rotation))
-    }
-
-    @ReactProp(name = "locationInterval")
-    fun setLocationInterval(view: AMapView, interval: Int) {
-        view.setLocationInterval(interval.toLong())
     }
 }
