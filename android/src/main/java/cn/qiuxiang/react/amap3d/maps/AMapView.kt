@@ -25,7 +25,7 @@ import com.facebook.react.uimanager.events.RCTEventEmitter
 import java.util.ArrayList
 import kotlin.collections.HashMap
 
-class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapLocationListener {
+class AMapView(context: Context) : TextureMapView(context), LocationSource, AMapLocationListener {
     private val eventEmitter: RCTEventEmitter = (context as ThemedReactContext).getJSModule(RCTEventEmitter::class.java)
     private val markers = HashMap<String, AMapMarker>()
     private val polyline = HashMap<String, AMapPolyline>()
@@ -36,8 +36,8 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
     private var locationOption: AMapLocationClientOption? = null
     private val mLocationList = ArrayList<LatLng>()
     private var mIsFirstLocation = true
+    private var isTracking: Boolean = false
     private var mMarkMyLocation: Marker? = null
-     private var isTracking: Boolean = false
     private var locationReceiver: BroadcastReceiver? = null
     private val locationStyle by lazy {
         val locationStyle = MyLocationStyle()
@@ -56,7 +56,8 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
     }
 
     private fun initLocation() {
-        map.myLocationStyle = locationStyle
+        map.setLocationSource(this)// 设置定位监听
+        map.isMyLocationEnabled = true
         locationClient = AMapLocationClient(context)
         locationOption = AMapLocationClientOption()
         // 设置定位模式为高精度模式
@@ -70,8 +71,10 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
         locationClient!!.setLocationOption(locationOption)
         // 启动定位
         locationClient!!.startLocation()
+        map.myLocationStyle = locationStyle
 
     }
+
     init {
         super.onCreate(null)
         initLocation()
@@ -233,7 +236,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
         }
         if (target.hasKey("coordinates")) {
             val json = target.getArray("coordinates")
-           setCoordinates(json)
+            setCoordinates(json)
         }
         if (target.hasKey("zoomLevel")) {
             zoomLevel = target.getDouble("zoomLevel").toFloat()
@@ -269,10 +272,14 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
                 .map {
                     LatLng(it.getDouble("latitude"), it.getDouble("longitude"))
                 }))
-        if (mLocationList.size>0){
+        if (mLocationList.size > 0) {
+            mLocatinLat = mLocationList[0].latitude
+            mLocationLon = mLocationList[0].longitude
+            setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
             drawRideTraceTotal()
         }
     }
+
     override fun activate(onLocationChangedListener: LocationSource.OnLocationChangedListener) {
         mLocationListener = onLocationChangedListener
     }
@@ -282,12 +289,9 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
     }
 
     override fun onLocationChanged(aMapLocation: AMapLocation?) {
-            if (aMapLocation != null && aMapLocation.errorCode == 0) {
-                if (mLocationListener != null) {
-                    mLocationListener!!.onLocationChanged(aMapLocation)// 显示系统小蓝点
-                }
-            }
+
     }
+
     fun onMyLocationChanged(aMapLocation: AMapLocation?) {
         if (aMapLocation != null) {
             if (aMapLocation != null && aMapLocation.errorCode == 0) {
@@ -296,7 +300,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
                 }
                 mLocatinLat = aMapLocation.latitude
                 mLocationLon = aMapLocation.longitude
-                if (mIsFirstLocation) {
+                if (mIsFirstLocation && mLocationList.size == 0) {
                     mIsFirstLocation = false
                     setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
                     mLocationList.add(LatLng(mLocatinLat, mLocationLon))
@@ -388,18 +392,21 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
 
     private var totalLine: Polyline? = null
     private fun drawRideTraceTotal() {
-        if (totalLine != null) {
-            totalLine!!.remove()
-            totalLine = null
+        if (isTracking) {
+            if (totalLine != null) {
+                totalLine!!.remove()
+                totalLine = null
+            }
+            val polylineOptions = PolylineOptions()
+            polylineOptions.addAll(mLocationList)
+            polylineOptions.visible(true).width(30f).zIndex(200f)
+            //        加入对应的颜色,使用colorValues 即表示使用多颜色，使用color表示使用单色线
+            polylineOptions.colorValues(WalkUtil.getColorList(mLocationList.size / 144 + 1, context))
+            //加上这个属性，表示使用渐变线
+            //        polylineOptions.useGradient(true);
+            totalLine = map.addPolyline(polylineOptions)
         }
-        val polylineOptions = PolylineOptions()
-        polylineOptions.addAll(mLocationList)
-        polylineOptions.visible(true).width(30f).zIndex(200f)
-        //        加入对应的颜色,使用colorValues 即表示使用多颜色，使用color表示使用单色线
-        polylineOptions.colorValues(WalkUtil.getColorList(mLocationList.size / 144 + 1, context))
-        //加上这个属性，表示使用渐变线
-        //        polylineOptions.useGradient(true);
-        totalLine = map.addPolyline(polylineOptions)
+
     }
 
     private fun setMyStopLoca(latlng: LatLng) {
@@ -427,8 +434,11 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
             mMarkMyLocation!!.position = latlng
         }
     }
-}
-fun setTraceEnabled(enabled: Boolean) {
-        isTracking =enabled
+
+
+    fun setTraceEnabled(enabled: Boolean) {
+        isTracking = enabled
     }
+
+}
 
