@@ -129,6 +129,7 @@ export default class MapView extends BaseComponent {
      */
     rotateEnabled: PropTypes.bool,
 
+     showTrace: PropTypes.bool,
     /**
      * 是否启用倾斜手势，用于改变视角
      */
