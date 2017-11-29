@@ -32,6 +32,7 @@ export default class MapView extends BaseComponent {
      */
     distanceFilter: PropTypes.number,
 
+    coordinates: PropTypes.arrayOf(LatLng).isRequired,
     /**
      * 是否显示室内地图
      */
