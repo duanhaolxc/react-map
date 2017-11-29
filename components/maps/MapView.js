@@ -24,7 +24,7 @@ export default class MapView extends BaseComponent {
      * - night: 夜间地图
      * - bus: 公交地图
      */
-    mapType: PropTypes.oneOf(['standard', 'satellite', 'navigation', 'night', 'bus'])
+    mapType: PropTypes.oneOf(['standard', 'satellite', 'navigation', 'night', 'bus']),
     /**
      * 定位的最小更新距离
      *
