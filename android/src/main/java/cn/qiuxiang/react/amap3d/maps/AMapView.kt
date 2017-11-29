@@ -37,6 +37,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
     private val mLocationList = ArrayList<LatLng>()
     private var mIsFirstLocation = true
     private var mMarkMyLocation: Marker? = null
+     private var isTracking: Boolean = false
     private var locationReceiver: BroadcastReceiver? = null
     private val locationStyle by lazy {
         val locationStyle = MyLocationStyle()
@@ -427,4 +428,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
         }
     }
 }
+fun setTraceEnabled(enabled: Boolean) {
+        isTracking =enabled
+    }
 
