@@ -30,8 +30,6 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.events.RCTEventEmitter
 import java.util.ArrayList
 import kotlin.collections.HashMap
-
-
 class AMapView(context: Context) : TextureMapView(context), LocationSource, AMapLocationListener {
     private val eventEmitter: RCTEventEmitter = (context as ThemedReactContext).getJSModule(RCTEventEmitter::class.java)
     private val markers = HashMap<String, AMapMarker>()
@@ -289,11 +287,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     }
 
     override fun onLocationChanged(aMapLocation: AMapLocation?) {
-            if (aMapLocation != null && aMapLocation.errorCode == 0) {
-                if (mLocationListener != null) {
-                    mLocationListener!!.onLocationChanged(aMapLocation)// 显示系统小蓝点
-                }
-            }
+
     }
 
     fun onMyLocationChanged(aMapLocation: AMapLocation?) {
@@ -303,7 +297,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
                 }
                 mLocatinLat = aMapLocation.latitude
                 mLocationLon = aMapLocation.longitude
-                if (mIsFirstLocation) {
+                if (mIsFirstLocation && mLocationList.size == 0) {
                     mIsFirstLocation = false
                     setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
                     mLocationList.add(LatLongBean(LatLng(mLocatinLat, mLocationLon), aMapLocation.speed))
@@ -377,6 +371,18 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
 
         }
         map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(mLocatinLat, mLocationLon)))
+=======
+            val polylineOptions = PolylineOptions()
+            polylineOptions.addAll(mLocationList)
+            polylineOptions.visible(true).width(30f).zIndex(200f)
+            //        加入对应的颜色,使用colorValues 即表示使用多颜色，使用color表示使用单色线
+            polylineOptions.colorValues(WalkUtil.getColorList(mLocationList.size / 144 + 1, context))
+            //加上这个属性，表示使用渐变线
+            //        polylineOptions.useGradient(true);
+            totalLine = map.addPolyline(polylineOptions)
+        }
+
+>>>>>>> 78ad358ddc89f3984f463653b06025ac676d281a
     }
 
 

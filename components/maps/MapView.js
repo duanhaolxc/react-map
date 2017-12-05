@@ -25,19 +25,6 @@ export default class MapView extends BaseComponent {
      * - bus: 公交地图
      */
     mapType: PropTypes.oneOf(['standard', 'satellite', 'navigation', 'night', 'bus']),
-
-    /**
-     * 是否启用定位
-     */
-    locationEnabled: PropTypes.bool,
-
-    /**
-     * 定位间隔(ms)，默认 2000，小于 1000 将只进行单次定位
-     *
-     * @platform android
-     */
-    locationInterval: PropTypes.number,
-
     /**
      * 定位的最小更新距离
      *
@@ -45,6 +32,7 @@ export default class MapView extends BaseComponent {
      */
     distanceFilter: PropTypes.number,
 
+    coordinates: PropTypes.arrayOf(LatLng).isRequired,
     /**
      * 是否显示室内地图
      */
@@ -141,6 +129,7 @@ export default class MapView extends BaseComponent {
      */
     rotateEnabled: PropTypes.bool,
 
+     showTrace: PropTypes.bool,
     /**
      * 是否启用倾斜手势，用于改变视角
      */
@@ -156,10 +145,6 @@ export default class MapView extends BaseComponent {
      */
     onLongPress: React.PropTypes.func,
 
-    /**
-     * 定位事件
-     */
-    onLocation: React.PropTypes.func,
 
     /**
      * 动画完成事件
