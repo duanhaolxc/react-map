@@ -184,4 +184,8 @@ internal class AMapViewManager : ViewGroupManager<AMapView>() {
     fun changeRotation(view: AMapView, rotation: Float) {
         view.map.moveCamera(CameraUpdateFactory.changeBearing(rotation))
     }
+       @ReactProp(name = "showTrace")
+    fun setTraceEnabled(view: AMapView, enabled: Boolean) {
+        view.setTraceEnabled(enabled)
+    }
 }

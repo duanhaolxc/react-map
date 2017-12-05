@@ -63,7 +63,7 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
         this.coordinates = ArrayList((0 until coordinates.size())
                 .map { coordinates.getMap(it) }
                 .map {
-                    LatLongData(it.getDouble("latitude"), it.getDouble("longitude"), if (it.hasKey("speed")) it.getDouble("speed") else 0.0)
+                    LatLongData(it.getDouble("latitude"), it.getDouble("longitude"), if (it.hasKey("speed")) it.getDouble("speed").toFloat() else 0.0f)
                 })
         fixPolyLines()
     }

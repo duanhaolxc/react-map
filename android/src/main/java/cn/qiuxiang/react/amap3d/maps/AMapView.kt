@@ -5,16 +5,22 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
+import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import cn.qiuxiang.react.amap3d.R
+import cn.qiuxiang.react.amap3d.utils.Douglas
+import cn.qiuxiang.react.amap3d.utils.LatLongBean
 import cn.qiuxiang.react.amap3d.utils.WalkUtil
 import com.amap.api.location.AMapLocation
 import com.amap.api.location.AMapLocationClient
 import com.amap.api.location.AMapLocationClientOption
 import com.amap.api.location.AMapLocationListener
-import com.amap.api.maps.*
+import com.amap.api.maps.AMap
+import com.amap.api.maps.CameraUpdateFactory
+import com.amap.api.maps.LocationSource
+import com.amap.api.maps.TextureMapView
 import com.amap.api.maps.model.*
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableArray
@@ -25,7 +31,8 @@ import com.facebook.react.uimanager.events.RCTEventEmitter
 import java.util.ArrayList
 import kotlin.collections.HashMap
 
-class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapLocationListener {
+
+class AMapView(context: Context) : TextureMapView(context), LocationSource, AMapLocationListener {
     private val eventEmitter: RCTEventEmitter = (context as ThemedReactContext).getJSModule(RCTEventEmitter::class.java)
     private val markers = HashMap<String, AMapMarker>()
     private val polyline = HashMap<String, AMapPolyline>()
@@ -34,9 +41,11 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
     private var mLocationListener: LocationSource.OnLocationChangedListener? = null
     private var locationClient: AMapLocationClient? = null
     private var locationOption: AMapLocationClientOption? = null
-    private val mLocationList = ArrayList<LatLng>()
+    private val mLocationList = ArrayList<LatLongBean>()
     private var mIsFirstLocation = true
+    private var isTracking: Boolean = false
     private var mMarkMyLocation: Marker? = null
+    private var mMarkStartLocation: Marker? = null
     private var locationReceiver: BroadcastReceiver? = null
     private val locationStyle by lazy {
         val locationStyle = MyLocationStyle()
@@ -55,7 +64,8 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
     }
 
     private fun initLocation() {
-        map.myLocationStyle = locationStyle
+        map.setLocationSource(this)// 设置定位监听
+        map.isMyLocationEnabled = true
         locationClient = AMapLocationClient(context)
         locationOption = AMapLocationClientOption()
         // 设置定位模式为高精度模式
@@ -69,8 +79,10 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
         locationClient!!.setLocationOption(locationOption)
         // 启动定位
         locationClient!!.startLocation()
+        map.myLocationStyle = locationStyle
 
     }
+
     init {
         super.onCreate(null)
         initLocation()
@@ -230,10 +242,6 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
             val json = target.getMap("coordinate")
             coordinate = LatLng(json.getDouble("latitude"), json.getDouble("longitude"))
         }
-        if (target.hasKey("coordinates")) {
-            val json = target.getArray("coordinates")
-           setCoordinates(json)
-        }
         if (target.hasKey("zoomLevel")) {
             zoomLevel = target.getDouble("zoomLevel").toFloat()
         }
@@ -263,15 +271,15 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
     }
 
     fun setCoordinates(coordinates: ReadableArray) {
+        Log.e("11111", System.currentTimeMillis().toString())
         mLocationList.addAll(ArrayList((0 until coordinates.size())
                 .map { coordinates.getMap(it) }
                 .map {
-                    LatLng(it.getDouble("latitude"), it.getDouble("longitude"))
+                    LatLongBean(LatLng(it.getDouble("latitude"), it.getDouble("longitude")), if (it.hasKey("speed")) it.getDouble("speed").toFloat() else 0.0f)
                 }))
-        if (mLocationList.size>0){
-            drawRideTraceTotal()
-        }
+        Log.e("22222", System.currentTimeMillis().toString())
     }
+
     override fun activate(onLocationChangedListener: LocationSource.OnLocationChangedListener) {
         mLocationListener = onLocationChangedListener
     }
@@ -287,8 +295,8 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
                 }
             }
     }
+
     fun onMyLocationChanged(aMapLocation: AMapLocation?) {
-        if (aMapLocation != null) {
             if (aMapLocation != null && aMapLocation.errorCode == 0) {
                 if (mLocationListener != null) {
                     mLocationListener!!.onLocationChanged(aMapLocation)// 显示系统小蓝点
@@ -298,85 +306,34 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
                 if (mIsFirstLocation) {
                     mIsFirstLocation = false
                     setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
-                    mLocationList.add(LatLng(mLocatinLat, mLocationLon))
+                    mLocationList.add(LatLongBean(LatLng(mLocatinLat, mLocationLon), aMapLocation.speed))
                 } else {
+                    Log.e("33333", System.currentTimeMillis().toString())
                     if (mLastLatLng == null) {
                         mLastLatLng = LatLng(mLocatinLat, mLocationLon)
                     } else {
-                        findBest()
+                        findBest(aMapLocation.speed)
                     }
                 }
             }
-        }
     }
 
-    private var mOver = false
     private var mLocatinLat: Double = 0.toDouble()
     private var mLocationLon: Double = 0.toDouble()
     private var mBestLat: Double = 0.toDouble()
     private var mBestLon: Double = 0.toDouble()
-    private var currLength: Double = 0.toDouble()
-    private var lastTime: Long = 0
-    private var currTime: Long = 0
-    private var errorCnt = 0
-    private var minusTime: Long = 0
     //当前经纬度
     private var mCurrentLatLng: LatLng? = null
     //上次经纬度
     private var mLastLatLng: LatLng? = null
-    private var currLa: LatLng? = null
-    private var lastLa = LatLng(0.0, 0.0)
-    private var overLa = LatLng(0.0, 0.0)
-    private fun findBest() {
-        currLa = LatLng(mLocatinLat, mLocationLon)
-        currTime = System.currentTimeMillis()
-        val move: String
-        currLength = AMapUtils.calculateLineDistance(
-                lastLa, currLa).toDouble()
-        if (lastLa != currLa) {
-            minusTime = currTime - lastTime
-            if (currLength < (minusTime + 1) / 1000 * 5) {
-                errorCnt = 0
-                lastLa = currLa as LatLng
-                lastTime = currTime
-                mBestLat = mLocatinLat
-                mBestLon = mLocationLon
-                mCurrentLatLng = LatLng(mBestLat, mBestLon)
-                mLocationList.add(mCurrentLatLng!!)
-                mMarkMyLocation!!.position = mCurrentLatLng
-                drawRideTraceTotal()
-            } else if (minusTime >= 20000) {
-                if (mOver) {
-                    if (overLa != currLa) {
-                        errorCnt = 0
-                        lastLa = currLa as LatLng
-                        lastTime = currTime
-                        mBestLat = mLocatinLat
-                        mBestLon = mLocationLon
-                        mCurrentLatLng = LatLng(mBestLat, mBestLon)
-                        mLocationList.add(mCurrentLatLng!!)
-                        mMarkMyLocation!!.position = mCurrentLatLng
-                        drawRideTraceTotal()
-                        mOver = false
-                    } else {
-                        errorCnt = 0
-                        lastTime = currTime
-                        mOver = false
-                    }
-                } else {
-                    if (currLength > (minusTime + 1) / 1000 * 5) {
-                        mOver = true
-                        overLa = currLa as LatLng
-                    }
-                }
 
-
-            } else {
-                errorCnt++
-            }
-        } else {
-            lastTime = currTime
-        }
+    private fun findBest(speed: Float) {
+        mBestLat = mLocatinLat
+        mBestLon = mLocationLon
+        mCurrentLatLng = LatLng(mBestLat, mBestLon)
+        mLocationList.add(LatLongBean(mCurrentLatLng!!, speed))
+        mMarkMyLocation!!.position = mCurrentLatLng
+        drawRideTraceTotal()
 
     }
 
@@ -387,19 +344,41 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
 
     private var totalLine: Polyline? = null
     private fun drawRideTraceTotal() {
-        if (totalLine != null) {
-            totalLine!!.remove()
-            totalLine = null
+        if (isTracking) {
+            if (totalLine != null) {
+                totalLine!!.remove()
+                totalLine = null
+            }
+            setMystartLoca(LatLng(mLocationList[0].latLong.latitude, mLocationList[0].latLong.longitude))
+            val polylineOptions = PolylineOptions()
+            val pathSmoothList = ArrayList<LatLng>()
+            val colorList = ArrayList<Int>()
+
+            for (i in Douglas(mLocationList, 5.0).compress().indices) {
+                pathSmoothList.add(mLocationList[i].latLong)
+                if (mLocationList[i].speed < 2f) {
+                    colorList.add(colorList.size, WalkUtil.getColorList(context)[0])
+                } else if (mLocationList[i].speed > 2 && mLocationList[i].speed < 5f) {
+                    colorList.add(colorList.size, WalkUtil.getColorList(context)[1])
+                } else if (mLocationList[i].speed > 5 && mLocationList[i].speed < 7f) {
+                    colorList.add(colorList.size, WalkUtil.getColorList(context)[2])
+                } else {
+                    colorList.add(colorList.size, WalkUtil.getColorList(context)[3])
+                }
+
+            }
+            polylineOptions.addAll(pathSmoothList)
+            polylineOptions.visible(true).width(15f).zIndex(10f)
+            //        加入对应的颜色,使用colorValues 即表示使用多颜色，使用color表示使用单色线
+            polylineOptions.colorValues(colorList)
+            //加上这个属性，表示使用渐变线
+            polylineOptions.useGradient(true)
+            totalLine = map.addPolyline(polylineOptions)
+
         }
-        val polylineOptions = PolylineOptions()
-        polylineOptions.addAll(mLocationList)
-        polylineOptions.visible(true).width(30f).zIndex(200f)
-        //        加入对应的颜色,使用colorValues 即表示使用多颜色，使用color表示使用单色线
-        polylineOptions.colorValues(WalkUtil.getColorList(mLocationList.size / 144 + 1, context))
-        //加上这个属性，表示使用渐变线
-        //        polylineOptions.useGradient(true);
-        totalLine = map.addPolyline(polylineOptions)
+        map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(mLocatinLat, mLocationLon)))
     }
+
 
     private fun setMyStopLoca(latlng: LatLng) {
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 17f))
@@ -414,7 +393,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
             markerOptions.zIndex(25f)
             markerOptions.zIndex(90f)
             val iv = ImageView(context)
-            val fmIv = FrameLayout.LayoutParams(100, 100)
+            val fmIv = FrameLayout.LayoutParams(70, 70)
             iv.setImageResource(R.drawable.location_icon)
             iv.layoutParams = fmIv
             val markerIcon = BitmapDescriptorFactory.fromView(iv)
@@ -426,5 +405,34 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource,AMapL
             mMarkMyLocation!!.position = latlng
         }
     }
+
+    private fun setMystartLoca(latlng: LatLng) {
+        if (mMarkStartLocation != null) {
+            return
+        }
+        if (mMarkStartLocation == null) {
+            val markerOptions = MarkerOptions()
+            markerOptions.isFlat = false
+            markerOptions.anchor(0.5f, 0.7f)
+            markerOptions.zIndex(25f)
+            markerOptions.zIndex(90f)
+            val iv = ImageView(context)
+            val fmIv = FrameLayout.LayoutParams(70, 70)
+            iv.setImageResource(R.drawable.location_start_icon)
+            iv.layoutParams = fmIv
+            val markerIcon = BitmapDescriptorFactory.fromView(iv)
+            markerOptions.icon(markerIcon)
+            markerOptions.position(latlng)
+            mMarkStartLocation = map.addMarker(markerOptions)
+
+        } else {
+            mMarkStartLocation!!.position = latlng
+        }
+    }
+
+    fun setTraceEnabled(enabled: Boolean) {
+        isTracking = enabled
+    }
+
 }
 

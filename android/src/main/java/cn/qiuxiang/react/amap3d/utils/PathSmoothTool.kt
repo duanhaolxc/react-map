@@ -1,10 +1,8 @@
 package cn.qiuxiang.react.amap3d.utils
 
-import android.util.Log
 import com.amap.api.maps.AMapUtils
 import com.amap.api.maps.model.LatLng
-
-import java.util.ArrayList
+import java.util.*
 
 class PathSmoothTool {
     var intensity = 3
@@ -80,7 +78,7 @@ class PathSmoothTool {
         if (originlist == null || originlist.size <= 2)
             return kalmanFilterList
         initial()//初始化滤波参数
-        var latLng: LatLng? = null
+        var latLng: LatLng?
         var lastLoc = originlist[0]
         kalmanFilterList.add(lastLoc)
         for (i in 1..originlist.size - 1) {
@@ -102,25 +100,23 @@ class PathSmoothTool {
      * @return 滤波后本次定位点坐标值
      */
     private fun kalmanFilterPoint(lastLoc: LatLng?, curLoc: LatLng?, intensity: Int): LatLng? {
-        var curLoc = curLoc
-        var intensity = intensity
+        var inten = intensity
         if (pdelt_x == 0.0 || pdelt_y == 0.0) {
             initial()
         }
-        var kalmanLatlng: LatLng? = null
+        var kalinaLading: LatLng? = null
         if (lastLoc == null || curLoc == null) {
-            return kalmanLatlng
+            return kalinaLading
         }
         if (intensity < 1) {
-            intensity = 1
+            inten = 1
         } else if (intensity > 5) {
-            intensity = 5
+            inten = 5
         }
-        for (j in 0..intensity - 1) {
-            kalmanLatlng = kalmanFilter(lastLoc.longitude, curLoc!!.longitude, lastLoc.latitude, curLoc.latitude)
-            curLoc = kalmanLatlng
+        for (j in 0 until inten) {
+            kalinaLading = kalmanFilter(lastLoc.longitude, curLoc.longitude, lastLoc.latitude, curLoc.latitude)
         }
-        return kalmanLatlng
+        return kalinaLading
     }
 
 
