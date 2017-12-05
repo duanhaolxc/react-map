@@ -30,6 +30,7 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.events.RCTEventEmitter
 import java.util.ArrayList
 import kotlin.collections.HashMap
+
 class AMapView(context: Context) : TextureMapView(context), LocationSource, AMapLocationListener {
     private val eventEmitter: RCTEventEmitter = (context as ThemedReactContext).getJSModule(RCTEventEmitter::class.java)
     private val markers = HashMap<String, AMapMarker>()
@@ -291,25 +292,25 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     }
 
     fun onMyLocationChanged(aMapLocation: AMapLocation?) {
-            if (aMapLocation != null && aMapLocation.errorCode == 0) {
-                if (mLocationListener != null) {
-                    mLocationListener!!.onLocationChanged(aMapLocation)// 显示系统小蓝点
-                }
-                mLocatinLat = aMapLocation.latitude
-                mLocationLon = aMapLocation.longitude
-                if (mIsFirstLocation && mLocationList.size == 0) {
-                    mIsFirstLocation = false
-                    setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
-                    mLocationList.add(LatLongBean(LatLng(mLocatinLat, mLocationLon), aMapLocation.speed))
+        if (aMapLocation != null && aMapLocation.errorCode == 0) {
+            if (mLocationListener != null) {
+                mLocationListener!!.onLocationChanged(aMapLocation)// 显示系统小蓝点
+            }
+            mLocatinLat = aMapLocation.latitude
+            mLocationLon = aMapLocation.longitude
+            if (mIsFirstLocation) {
+                mIsFirstLocation = false
+                setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
+                mLocationList.add(LatLongBean(LatLng(mLocatinLat, mLocationLon), aMapLocation.speed))
+            } else {
+                Log.e("33333", System.currentTimeMillis().toString())
+                if (mLastLatLng == null) {
+                    mLastLatLng = LatLng(mLocatinLat, mLocationLon)
                 } else {
-                    Log.e("33333", System.currentTimeMillis().toString())
-                    if (mLastLatLng == null) {
-                        mLastLatLng = LatLng(mLocatinLat, mLocationLon)
-                    } else {
-                        findBest(aMapLocation.speed)
-                    }
+                    findBest(aMapLocation.speed)
                 }
             }
+        }
     }
 
     private var mLocatinLat: Double = 0.toDouble()
@@ -326,7 +327,6 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         mBestLon = mLocationLon
         mCurrentLatLng = LatLng(mBestLat, mBestLon)
         mLocationList.add(LatLongBean(mCurrentLatLng!!, speed))
-        mMarkMyLocation!!.position = mCurrentLatLng
         drawRideTraceTotal()
 
     }
@@ -337,6 +337,11 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     }
 
     private var totalLine: Polyline? = null
+    /**
+     * 实时定位展示运动轨迹
+     */
+    internal var builder = StringBuilder()
+    internal var d = Douglas()
     private fun drawRideTraceTotal() {
         if (isTracking) {
             if (totalLine != null) {
@@ -347,20 +352,36 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             val polylineOptions = PolylineOptions()
             val pathSmoothList = ArrayList<LatLng>()
             val colorList = ArrayList<Int>()
-
-            for (i in Douglas(mLocationList, 5.0).compress().indices) {
-                pathSmoothList.add(mLocationList[i].latLong)
-                if (mLocationList[i].speed < 2f) {
-                    colorList.add(colorList.size, WalkUtil.getColorList(context)[0])
-                } else if (mLocationList[i].speed > 2 && mLocationList[i].speed < 5f) {
-                    colorList.add(colorList.size, WalkUtil.getColorList(context)[1])
-                } else if (mLocationList[i].speed > 5 && mLocationList[i].speed < 7f) {
-                    colorList.add(colorList.size, WalkUtil.getColorList(context)[2])
+            for (i in this.mLocationList.indices) {
+                if (i == 0) {//拆分坐标
+                    builder.append("LINESTRING(" + this.mLocationList[i].latLong.latitude + " " + this.mLocationList[i].latLong.longitude + " " + this.mLocationList[i].speed)
                 } else {
-                    colorList.add(colorList.size, WalkUtil.getColorList(context)[3])
+                    builder.append("," + this.mLocationList[i].latLong.latitude + " " + this.mLocationList[i].latLong.longitude + " " + this.mLocationList[i].speed)
                 }
 
+                if (i == this.mLocationList.size - 1) {
+                    builder.append(")")
+                }
             }
+            d.readPoint(builder)
+            d.compress(d.points!![0], d.points!![d.points!!.size - 1])
+            for (i in d.points!!.indices) {
+                if (d.points!![i].index > -1) {
+                    pathSmoothList.add(LatLng(d.points!![i].x, d.points!![i].y))
+                    var speed = d.points!![i].speed
+                    if (speed < 2f) {
+                        colorList.add(colorList.size, WalkUtil.getColorList(context)[0])
+                    } else if (speed > 2 && speed < 5f) {
+                        colorList.add(colorList.size, WalkUtil.getColorList(context)[1])
+                    } else if (speed > 5 && speed < 7f) {
+                        colorList.add(colorList.size, WalkUtil.getColorList(context)[2])
+                    } else {
+                        colorList.add(colorList.size, WalkUtil.getColorList(context)[3])
+                    }
+                }
+            }
+
+
             polylineOptions.addAll(pathSmoothList)
             polylineOptions.visible(true).width(15f).zIndex(10f)
             //        加入对应的颜色,使用colorValues 即表示使用多颜色，使用color表示使用单色线
@@ -368,26 +389,14 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             //加上这个属性，表示使用渐变线
             polylineOptions.useGradient(true)
             totalLine = map.addPolyline(polylineOptions)
+            map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(mLocatinLat, mLocationLon)))
 
         }
-        map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(mLocatinLat, mLocationLon)))
-=======
-            val polylineOptions = PolylineOptions()
-            polylineOptions.addAll(mLocationList)
-            polylineOptions.visible(true).width(30f).zIndex(200f)
-            //        加入对应的颜色,使用colorValues 即表示使用多颜色，使用color表示使用单色线
-            polylineOptions.colorValues(WalkUtil.getColorList(mLocationList.size / 144 + 1, context))
-            //加上这个属性，表示使用渐变线
-            //        polylineOptions.useGradient(true);
-            totalLine = map.addPolyline(polylineOptions)
-        }
 
->>>>>>> 78ad358ddc89f3984f463653b06025ac676d281a
     }
 
 
     private fun setMyStopLoca(latlng: LatLng) {
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng, 17f))
         if (mMarkMyLocation != null) {
             mMarkMyLocation!!.destroy()
             mMarkMyLocation = null
@@ -424,7 +433,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             markerOptions.zIndex(90f)
             val iv = ImageView(context)
             val fmIv = FrameLayout.LayoutParams(70, 70)
-            iv.setImageResource(R.drawable.location_start_icon)
+            iv.setImageResource(R.drawable.location_icon)
             iv.layoutParams = fmIv
             val markerIcon = BitmapDescriptorFactory.fromView(iv)
             markerOptions.icon(markerIcon)

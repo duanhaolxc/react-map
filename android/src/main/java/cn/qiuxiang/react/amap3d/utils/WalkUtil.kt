@@ -1,4 +1,3 @@
-@file:Suppress("DEPRECATION")
 
 package cn.qiuxiang.react.amap3d.utils
 
