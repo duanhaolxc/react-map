@@ -1,10 +1,11 @@
 package cn.qiuxiang.react.amap3d.utils
 
+import android.util.Log
 import com.amap.api.maps.AMapUtils
 import com.amap.api.maps.model.LatLng
 import java.util.*
 
-class PathSmoothTool {
+class PathSmooth {
     var intensity = 3
     var threshhold = 0.3f
     private var mNoiseThreshhold = 10f
@@ -18,12 +19,10 @@ class PathSmoothTool {
      * @param originlist 原始轨迹list,list.size大于2
      * @return 优化后轨迹list
      */
-    fun pathOptimize(originlist: List<LatLng>): List<LatLng>? {
-//        Log.i("MY","list: "+originlist.size)
+    fun pathOptimize(originlist: List<LatLongBean>): List<LatLongBean>? {
+        Log.i("MY","list: "+originlist.size)
         val list = removeNoisePoint(originlist)//去噪
         val afterList = kalmanFilterPath(list, intensity)//滤波
-        //        Log.i("MY","afterList: "+afterList.size());
-        //        Log.i("MY","pathoptimizeList: "+pathoptimizeList.size());
         return reducerVerticalThreshold(afterList, threshhold)
     }
 
@@ -32,7 +31,7 @@ class PathSmoothTool {
      * @param originlist 原始轨迹list,list.size大于2
      * @return 滤波处理后的轨迹list
      */
-    fun kalmanFilterPath(originlist: List<LatLng>): List<LatLng> {
+    fun kalmanFilterPath(originlist: List<LatLongBean>): List<LatLongBean> {
         return kalmanFilterPath(originlist, intensity)
     }
 
@@ -42,7 +41,7 @@ class PathSmoothTool {
      * @param originlist 原始轨迹list,list.size大于2
      * @return
      */
-    fun removeNoisePoint(originlist: List<LatLng>): List<LatLng>? {
+    fun removeNoisePoint(originlist: List<LatLongBean>): List<LatLongBean>? {
         return reduceNoisePoint(originlist, mNoiseThreshhold)
     }
 
@@ -52,7 +51,7 @@ class PathSmoothTool {
      * @param curLoc 本次定位点坐标
      * @return 滤波后本次定位点坐标值
      */
-    fun kalmanFilterPoint(lastLoc: LatLng, curLoc: LatLng): LatLng? {
+    fun kalmanFilterPoint(lastLoc: LatLongBean, curLoc: LatLongBean): LatLongBean? {
         return kalmanFilterPoint(lastLoc, curLoc, intensity)
     }
 
@@ -61,7 +60,7 @@ class PathSmoothTool {
      * @param inPoints 待抽稀的轨迹list，至少包含两个点，删除垂距小于mThreshhold的点
      * @return 抽稀后的轨迹list
      */
-    fun reducerVerticalThreshold(inPoints: List<LatLng>): List<LatLng>? {
+    fun reducerVerticalThreshold(inPoints: List<LatLongBean>): List<LatLongBean>? {
         return reducerVerticalThreshold(inPoints, threshhold)
     }
 
@@ -72,15 +71,15 @@ class PathSmoothTool {
      * @param intensity 滤波强度（1—5）
      * @return
      */
-    private fun kalmanFilterPath(originlist: List<LatLng>?, intensity: Int): List<LatLng> {
-        val kalmanFilterList = ArrayList<LatLng>()
+    private fun kalmanFilterPath(originlist: List<LatLongBean>?, intensity: Int): List<LatLongBean> {
+        val kalmanFilterList = ArrayList<LatLongBean>()
         if (originlist == null || originlist.size <= 2)
             return kalmanFilterList
         initial()//初始化滤波参数
-        var latLng: LatLng?
+        var latLng: LatLongBean?
         var lastLoc = originlist[0]
         kalmanFilterList.add(lastLoc)
-        for (i in 1..originlist.size - 1) {
+        for (i in 1 until originlist.size) {
             val curLoc = originlist[i]
             latLng = kalmanFilterPoint(lastLoc, curLoc, intensity)
             if (latLng != null) {
@@ -98,12 +97,12 @@ class PathSmoothTool {
      * @param intensity 滤波强度（1—5）
      * @return 滤波后本次定位点坐标值
      */
-    private fun kalmanFilterPoint(lastLoc: LatLng?, curLoc: LatLng?, intensity: Int): LatLng? {
+    private fun kalmanFilterPoint(lastLoc: LatLongBean?, curLoc: LatLongBean?, intensity: Int): LatLongBean? {
         var inten = intensity
         if (pdelt_x == 0.0 || pdelt_y == 0.0) {
             initial()
         }
-        var kalinaLading: LatLng? = null
+        var kalinaLading: LatLongBean? = null
         if (lastLoc == null || curLoc == null) {
             return kalinaLading
         }
@@ -113,7 +112,7 @@ class PathSmoothTool {
             inten = 5
         }
         for (j in 0 until inten) {
-            kalinaLading = kalmanFilter(lastLoc.longitude, curLoc.longitude, lastLoc.latitude, curLoc.latitude)
+            kalinaLading = kalmanFilter(lastLoc.latLong.longitude, curLoc.latLong.longitude, lastLoc.latLong.latitude, curLoc.latLong.latitude,curLoc.speed)
         }
         return kalinaLading
     }
@@ -147,7 +146,8 @@ class PathSmoothTool {
         mdelt_y = 5.698402909980532E-4
     }
 
-    private fun kalmanFilter(oldValue_x: Double, value_x: Double, oldValue_y: Double, value_y: Double): LatLng {
+    private fun kalmanFilter(oldValue_x: Double, value_x: Double, oldValue_y: Double, value_y: Double,
+                             speed:Float): LatLongBean {
         lastLocation_x = oldValue_x
         currentLocation_x = value_x
         gauss_x = Math.sqrt(pdelt_x * pdelt_x + mdelt_x * mdelt_x) + m_Q     //计算高斯噪音偏差
@@ -163,20 +163,20 @@ class PathSmoothTool {
         mdelt_y = Math.sqrt((1 - kalmanGain_y) * gauss_y * gauss_y)      //修正模型偏差
 
 
-        return LatLng(estimate_y, estimate_x)
+        return LatLongBean(LatLng(estimate_y, estimate_x), speed)
     }
     /***************************卡尔曼滤波结束 */
 
     /***************************抽稀算法 */
-    private fun reducerVerticalThreshold(inPoints: List<LatLng>?,
-                                         threshHold: Float): List<LatLng>? {
+    private fun reducerVerticalThreshold(inPoints: List<LatLongBean>?,
+                                         threshHold: Float): List<LatLongBean>? {
         if (inPoints == null) {
             return null
         }
         if (inPoints.size <= 2) {
             return inPoints
         }
-        val ret = ArrayList<LatLng>()
+        val ret = ArrayList<LatLongBean>()
         for (i in inPoints.indices) {
             val pre = getLastLocation(ret)
             val cur = inPoints[i]
@@ -190,12 +190,12 @@ class PathSmoothTool {
                 ret.add(cur)
             }
         }
-//        Log.i("MY","originlist: "+ret.size)
+        Log.i("MY","originlist: "+ret.size)
         return ret
     }
 
-    private fun getLastLocation(oneGraspList: List<LatLng>?): LatLng? {
-        if (oneGraspList == null || oneGraspList.size == 0) {
+    private fun getLastLocation(oneGraspList: List<LatLongBean>?): LatLongBean? {
+        if (oneGraspList == null || oneGraspList.isEmpty()) {
             return null
         }
         val locListSize = oneGraspList.size
@@ -208,12 +208,12 @@ class PathSmoothTool {
      * @param lineBegin 线的起点
      * @param lineEnd 线的终点
      */
-    private fun calculateDistanceFromPoint(p: LatLng, lineBegin: LatLng,
-                                           lineEnd: LatLng): Double {
-        val A = p.longitude - lineBegin.longitude
-        val B = p.latitude - lineBegin.latitude
-        val C = lineEnd.longitude - lineBegin.longitude
-        val D = lineEnd.latitude - lineBegin.latitude
+    private fun calculateDistanceFromPoint(p: LatLongBean, lineBegin: LatLongBean,
+                                           lineEnd: LatLongBean): Double {
+        val A = p.latLong.longitude - lineBegin.latLong.longitude
+        val B = p.latLong.latitude - lineBegin.latLong.latitude
+        val C = lineEnd.latLong.longitude - lineBegin.latLong.longitude
+        val D = lineEnd.latLong.latitude - lineBegin.latLong.latitude
 
         val dot = A * C + B * D
         val len_sq = C * C + D * D
@@ -222,31 +222,31 @@ class PathSmoothTool {
         val xx: Double
         val yy: Double
 
-        if (param < 0 || lineBegin.longitude == lineEnd.longitude && lineBegin.latitude == lineEnd.latitude) {
-            xx = lineBegin.longitude
-            yy = lineBegin.latitude
+        if (param < 0 || lineBegin.latLong.longitude == lineEnd.latLong.longitude && lineBegin.latLong.latitude == lineEnd.latLong.latitude) {
+            xx = lineBegin.latLong.longitude
+            yy = lineBegin.latLong.latitude
             //            return -1;
         } else if (param > 1) {
-            xx = lineEnd.longitude
-            yy = lineEnd.latitude
+            xx = lineEnd.latLong.longitude
+            yy = lineEnd.latLong.latitude
             //            return -1;
         } else {
-            xx = lineBegin.longitude + param * C
-            yy = lineBegin.latitude + param * D
+            xx = lineBegin.latLong.longitude + param * C
+            yy = lineBegin.latLong.latitude + param * D
         }
-        return AMapUtils.calculateLineDistance(p, LatLng(yy, xx)).toDouble()
+        return AMapUtils.calculateLineDistance(p.latLong, LatLng(yy, xx)).toDouble()
     }
 
     /***************************抽稀算法结束 */
 
-    private fun reduceNoisePoint(inPoints: List<LatLng>?, threshHold: Float): List<LatLng>? {
+    private fun reduceNoisePoint(inPoints: List<LatLongBean>?, threshHold: Float): List<LatLongBean>? {
         if (inPoints == null) {
             return null
         }
         if (inPoints.size <= 2) {
             return inPoints
         }
-        val ret = ArrayList<LatLng>()
+        val ret = ArrayList<LatLongBean>()
         for (i in inPoints.indices) {
             val pre = getLastLocation(ret)
             val cur = inPoints[i]

@@ -10,8 +10,8 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import cn.qiuxiang.react.amap3d.R
-import cn.qiuxiang.react.amap3d.utils.Douglas
 import cn.qiuxiang.react.amap3d.utils.LatLongBean
+import cn.qiuxiang.react.amap3d.utils.PathSmooth
 import cn.qiuxiang.react.amap3d.utils.WalkUtil
 import com.amap.api.location.AMapLocation
 import com.amap.api.location.AMapLocationClient
@@ -270,13 +270,15 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     }
 
     fun setCoordinates(coordinates: ReadableArray) {
-        Log.e("11111", System.currentTimeMillis().toString())
         mLocationList.addAll(ArrayList((0 until coordinates.size())
                 .map { coordinates.getMap(it) }
                 .map {
                     LatLongBean(LatLng(it.getDouble("latitude"), it.getDouble("longitude")), if (it.hasKey("speed")) it.getDouble("speed").toFloat() else 0.0f)
                 }))
-        Log.e("22222", System.currentTimeMillis().toString())
+        if (!isDrawing){
+            drawRideTraceTotal()
+        }
+
     }
 
     override fun activate(onLocationChangedListener: LocationSource.OnLocationChangedListener) {
@@ -288,7 +290,11 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     }
 
     override fun onLocationChanged(aMapLocation: AMapLocation?) {
-
+        if (aMapLocation != null && aMapLocation.errorCode == 0) {
+            if (mLocationListener != null) {
+                mLocationListener!!.onLocationChanged(aMapLocation)// 显示系统小蓝点
+            }
+        }
     }
 
     fun onMyLocationChanged(aMapLocation: AMapLocation?) {
@@ -303,7 +309,6 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
                 setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
                 mLocationList.add(LatLongBean(LatLng(mLocatinLat, mLocationLon), aMapLocation.speed))
             } else {
-                Log.e("33333", System.currentTimeMillis().toString())
                 if (mLastLatLng == null) {
                     mLastLatLng = LatLng(mLocatinLat, mLocationLon)
                 } else {
@@ -327,7 +332,11 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         mBestLon = mLocationLon
         mCurrentLatLng = LatLng(mBestLat, mBestLon)
         mLocationList.add(LatLongBean(mCurrentLatLng!!, speed))
-        drawRideTraceTotal()
+        mMarkMyLocation!!.position=mCurrentLatLng
+        if (!isDrawing){
+            drawRideTraceTotal()
+        }
+
 
     }
 
@@ -340,9 +349,9 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     /**
      * 实时定位展示运动轨迹
      */
-    internal var builder = StringBuilder()
-    internal var d = Douglas()
+    private var isDrawing:Boolean = false
     private fun drawRideTraceTotal() {
+        this.isDrawing=true
         if (isTracking) {
             if (totalLine != null) {
                 totalLine!!.remove()
@@ -352,36 +361,22 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             val polylineOptions = PolylineOptions()
             val pathSmoothList = ArrayList<LatLng>()
             val colorList = ArrayList<Int>()
-            for (i in this.mLocationList.indices) {
-                if (i == 0) {//拆分坐标
-                    builder.append("LINESTRING(" + this.mLocationList[i].latLong.latitude + " " + this.mLocationList[i].latLong.longitude + " " + this.mLocationList[i].speed)
+            val locationList=ArrayList<LatLongBean>()
+            locationList.addAll(PathSmooth().pathOptimize(mLocationList)!!)
+            for (i in locationList.indices) {
+                pathSmoothList.add(locationList[i].latLong)
+                if (locationList[i].speed < 2f) {
+                    colorList.add(colorList.size, WalkUtil.getColorList(context)[0])
+                } else if (locationList[i].speed > 2 && locationList[i].speed < 5f) {
+                    colorList.add(colorList.size, WalkUtil.getColorList(context)[1])
+                } else if (locationList[i].speed > 5 && locationList[i].speed < 7f) {
+                    colorList.add(colorList.size, WalkUtil.getColorList(context)[2])
+                } else if (locationList[i].speed > 7 && locationList[i].speed < 9f) {
+                    colorList.add(colorList.size, WalkUtil.getColorList(context)[3])
                 } else {
-                    builder.append("," + this.mLocationList[i].latLong.latitude + " " + this.mLocationList[i].latLong.longitude + " " + this.mLocationList[i].speed)
-                }
-
-                if (i == this.mLocationList.size - 1) {
-                    builder.append(")")
+                    colorList.add(colorList.size, WalkUtil.getColorList(context)[4])
                 }
             }
-            d.readPoint(builder)
-            d.compress(d.points!![0], d.points!![d.points!!.size - 1])
-            for (i in d.points!!.indices) {
-                if (d.points!![i].index > -1) {
-                    pathSmoothList.add(LatLng(d.points!![i].x, d.points!![i].y))
-                    var speed = d.points!![i].speed
-                    if (speed < 2f) {
-                        colorList.add(colorList.size, WalkUtil.getColorList(context)[0])
-                    } else if (speed > 2 && speed < 5f) {
-                        colorList.add(colorList.size, WalkUtil.getColorList(context)[1])
-                    } else if (speed > 5 && speed < 7f) {
-                        colorList.add(colorList.size, WalkUtil.getColorList(context)[2])
-                    } else {
-                        colorList.add(colorList.size, WalkUtil.getColorList(context)[3])
-                    }
-                }
-            }
-
-
             polylineOptions.addAll(pathSmoothList)
             polylineOptions.visible(true).width(15f).zIndex(10f)
             //        加入对应的颜色,使用colorValues 即表示使用多颜色，使用color表示使用单色线
@@ -392,6 +387,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(mLocatinLat, mLocationLon)))
 
         }
+        this.isDrawing=false
 
     }
 
@@ -433,7 +429,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             markerOptions.zIndex(90f)
             val iv = ImageView(context)
             val fmIv = FrameLayout.LayoutParams(70, 70)
-            iv.setImageResource(R.drawable.location_icon)
+            iv.setImageResource(R.drawable.location_start_icon)
             iv.layoutParams = fmIv
             val markerIcon = BitmapDescriptorFactory.fromView(iv)
             markerOptions.icon(markerIcon)

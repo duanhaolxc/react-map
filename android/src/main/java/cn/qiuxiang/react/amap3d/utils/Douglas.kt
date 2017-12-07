@@ -73,7 +73,6 @@ class Douglas {
      * @param to   曲线的终止点
      */
     fun compress(from: Point?, to: Point?) {
-
         /**
          * 由起始点和终止点构成的直线方程一般式的系数
          */
@@ -99,30 +98,26 @@ class Douglas {
             return
         var middle: Point? = null
         val distance = ArrayList<Double>()
-        for (i in m + 1..n - 1) {
+        for (i in m + 1 until n) {
             d = Math.abs(A * points!![i].x + B * points!![i].y + C) / Math.sqrt(Math.pow(A, 2.0) + Math.pow(B, 2.0))
             distance.add(d)
         }
         dmax = distance[0]
-        for (j in 1..distance.size - 1) {
+        for (j in 1 until distance.size) {
             if (distance[j] > dmax)
                 dmax = distance[j]
         }
-        if (dmax > D)
-            switchvalue = true
-        else
-            switchvalue = false
+        switchvalue = dmax > D
         if (!switchvalue) {
             // 删除Points(m,n)内的坐标
-            for (i in m + 1..n - 1) {
+            for (i in m + 1 until n) {
                 points!![i].index = -1
             }
 
         } else {
-            for (i in m + 1..n - 1) {
-                if (Math.abs(A * points!![i].x + B * points!![i].y + C) / Math.sqrt(Math.pow(A, 2.0) + Math.pow(B, 2.0)) == dmax)
-                    middle = points!![i]
-            }
+            (m + 1 until n)
+                    .filter { Math.abs(A * points!![it].x + B * points!![it].y + C) / Math.sqrt(Math.pow(A, 2.0) + Math.pow(B, 2.0)) == dmax }
+                    .forEach { middle = points!![it] }
             compress(from, middle)
             compress(middle, to)
         }

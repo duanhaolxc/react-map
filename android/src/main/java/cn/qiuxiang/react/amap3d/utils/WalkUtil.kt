@@ -122,6 +122,7 @@ object WalkUtil {
         colorList.add(mContext.resources.getColor(R.color.track_line_2))
         colorList.add(mContext.resources.getColor(R.color.track_line_3))
         colorList.add(mContext.resources.getColor(R.color.track_line_4))
+        colorList.add(mContext.resources.getColor(R.color.track_line_5))
         return colorList
     }
 
