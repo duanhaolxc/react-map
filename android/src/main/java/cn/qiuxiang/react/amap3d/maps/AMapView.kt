@@ -275,7 +275,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
                 .map {
                     LatLongBean(LatLng(it.getDouble("latitude"), it.getDouble("longitude")), if (it.hasKey("speed")) it.getDouble("speed").toFloat() else 0.0f)
                 }))
-        if (!isDrawing){
+        if (!isDrawing) {
             drawRideTraceTotal()
         }
 
@@ -293,6 +293,12 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         if (aMapLocation != null && aMapLocation.errorCode == 0) {
             if (mLocationListener != null) {
                 mLocationListener!!.onLocationChanged(aMapLocation)// 显示系统小蓝点
+            }
+            mLocatinLat = aMapLocation.latitude
+            mLocationLon = aMapLocation.longitude
+            if (mIsFirstLocation) {
+                mIsFirstLocation = false
+                setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
             }
         }
     }
@@ -332,8 +338,8 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         mBestLon = mLocationLon
         mCurrentLatLng = LatLng(mBestLat, mBestLon)
         mLocationList.add(LatLongBean(mCurrentLatLng!!, speed))
-        mMarkMyLocation!!.position=mCurrentLatLng
-        if (!isDrawing){
+        mMarkMyLocation!!.position = mCurrentLatLng
+        if (!isDrawing) {
             drawRideTraceTotal()
         }
 
@@ -349,9 +355,10 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     /**
      * 实时定位展示运动轨迹
      */
-    private var isDrawing:Boolean = false
+    private var isDrawing: Boolean = false
+
     private fun drawRideTraceTotal() {
-        this.isDrawing=true
+        this.isDrawing = true
         if (isTracking) {
             if (totalLine != null) {
                 totalLine!!.remove()
@@ -361,7 +368,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             val polylineOptions = PolylineOptions()
             val pathSmoothList = ArrayList<LatLng>()
             val colorList = ArrayList<Int>()
-            val locationList=ArrayList<LatLongBean>()
+            val locationList = ArrayList<LatLongBean>()
             locationList.addAll(PathSmooth().pathOptimize(mLocationList)!!)
             for (i in locationList.indices) {
                 pathSmoothList.add(locationList[i].latLong)
@@ -387,7 +394,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(mLocatinLat, mLocationLon)))
 
         }
-        this.isDrawing=false
+        this.isDrawing = false
 
     }
 
