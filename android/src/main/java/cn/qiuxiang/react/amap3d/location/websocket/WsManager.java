@@ -14,14 +14,11 @@ import com.neovisionaries.ws.client.WebSocketFactory;
 import com.neovisionaries.ws.client.WebSocketFrame;
 import com.orhanobut.logger.BuildConfig;
 import com.orhanobut.logger.Logger;
-
 import org.json.JSONObject;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import cn.qiuxiang.react.amap3d.location.db.DBConfig;
 import cn.qiuxiang.react.amap3d.location.db.DataBaseOpenHelper;
 import cn.qiuxiang.react.amap3d.location.db.DataBaseOperateToken;
