@@ -2,13 +2,14 @@ package cn.qiuxiang.react.amap3d.maps
 
 import android.content.Context
 import android.graphics.Color
-import android.widget.FrameLayout
-import android.widget.ImageView
 import cn.qiuxiang.react.amap3d.utils.LatLongData
 import cn.qiuxiang.react.amap3d.utils.PathSmoothTool
 import com.amap.api.maps.AMap
 import com.amap.api.maps.CameraUpdateFactory
-import com.amap.api.maps.model.*
+import com.amap.api.maps.model.LatLng
+import com.amap.api.maps.model.LatLngBounds
+import com.amap.api.maps.model.Polyline
+import com.amap.api.maps.model.PolylineOptions
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.views.view.ReactViewGroup
 
@@ -94,12 +95,6 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
         if (this.coordinates.size > 0) {
             polylineOptions = ArrayList()
             for (i in this.coordinates.indices) {
-                if (i == 0) {
-                    addStartMarker(LatLng(this.coordinates[i].latitude, this.coordinates[i].longitude))
-                }
-                if (i == coordinates.size - 1) {
-                    addEndMarker(LatLng(this.coordinates[i].latitude, this.coordinates[i].longitude))
-                }
                 polylineOptions!!.add(LatLng(this.coordinates[i].latitude, this.coordinates[i].longitude))
                 if (this.colors.size > 0) {
                     var speed = this.coordinates[i].speed
@@ -122,55 +117,5 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
         }
     }
 
-    private var mMarkStart: Marker? = null
-    private var mMarkend: Marker? = null
-    private fun addStartMarker(start: LatLng) {
-        if (mMarkStart != null) {
-            mMarkStart!!.destroy()
-            mMarkStart = null
-        }
-        if (mMarkStart == null) {
-            val markerOptions = MarkerOptions()
-            markerOptions.isFlat = false
-            markerOptions.anchor(0.5f, 0.7f)
-            markerOptions.zIndex(25f)
-            markerOptions.zIndex(90f)
-            val iv = ImageView(context)
-            val fmIv = FrameLayout.LayoutParams(70, 70)
-            iv.setImageResource(R.drawable.location_start_icon)
-            iv.layoutParams = fmIv
-            val markerIcon = BitmapDescriptorFactory.fromView(iv)
-            markerOptions.icon(markerIcon)
-            markerOptions.position(start)
-            mMarkStart = map.addMarker(markerOptions)
 
-        } else {
-            mMarkStart!!.position = start
-        }
-    }
-
-    private fun addEndMarker(end: LatLng) {
-        if (mMarkend != null) {
-            mMarkend!!.destroy()
-            mMarkend = null
-        }
-        if (mMarkend == null) {
-            val markerOptions = MarkerOptions()
-            markerOptions.isFlat = false
-            markerOptions.anchor(0.5f, 0.7f)
-            markerOptions.zIndex(25f)
-            markerOptions.zIndex(90f)
-            val iv = ImageView(context)
-            val fmIv = FrameLayout.LayoutParams(70, 70)
-            iv.setImageResource(R.drawable.location_icon)
-            iv.layoutParams = fmIv
-            val markerIcon = BitmapDescriptorFactory.fromView(iv)
-            markerOptions.icon(markerIcon)
-            markerOptions.position(end)
-            mMarkend = map.addMarker(markerOptions)
-
-        } else {
-            mMarkend!!.position = end
-        }
-    }
 }

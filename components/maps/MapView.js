@@ -37,7 +37,10 @@ export default class MapView extends BaseComponent {
      * 是否显示室内地图
      */
     showsIndoorMap: PropTypes.bool,
-
+  /**
+     * 是否启用定位
+   */
+    locationEnabled: PropTypes.bool,
     /**
      * 是否显示室内地图楼层切换控件
      *

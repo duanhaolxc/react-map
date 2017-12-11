@@ -4,12 +4,19 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.database.Cursor
 import android.graphics.Color
 import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import cn.qiuxiang.react.amap3d.R
+import cn.qiuxiang.react.amap3d.location.db.DBConfig
+import cn.qiuxiang.react.amap3d.location.db.DataBaseOpenHelper
+import cn.qiuxiang.react.amap3d.location.db.DataBaseOperateToken
+import cn.qiuxiang.react.amap3d.location.db.IQueryCallback
+import cn.qiuxiang.react.amap3d.location.utils.DateUtil
+import cn.qiuxiang.react.amap3d.location.utils.FileUtils
 import cn.qiuxiang.react.amap3d.utils.LatLongBean
 import cn.qiuxiang.react.amap3d.utils.PathSmooth
 import cn.qiuxiang.react.amap3d.utils.WalkUtil
@@ -275,9 +282,6 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
                 .map {
                     LatLongBean(LatLng(it.getDouble("latitude"), it.getDouble("longitude")), if (it.hasKey("speed")) it.getDouble("speed").toFloat() else 0.0f)
                 }))
-        if (!isDrawing) {
-            drawRideTraceTotal()
-        }
 
     }
 
@@ -298,7 +302,13 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             mLocationLon = aMapLocation.longitude
             if (mIsFirstLocation) {
                 mIsFirstLocation = false
-                setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
+                if (mLocationList.size>0){
+                    setMyStopLoca(mLocationList[mLocationList.size-1].latLong)
+                }else{
+                    setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
+                }
+
+
             }
         }
     }
@@ -312,7 +322,11 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             mLocationLon = aMapLocation.longitude
             if (mIsFirstLocation) {
                 mIsFirstLocation = false
-                setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
+                if (mLocationList.size>0){
+                    setMyStopLoca(mLocationList[mLocationList.size-1].latLong)
+                }else{
+                    setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
+                }
                 mLocationList.add(LatLongBean(LatLng(mLocatinLat, mLocationLon), aMapLocation.speed))
             } else {
                 if (mLastLatLng == null) {
@@ -339,9 +353,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         mCurrentLatLng = LatLng(mBestLat, mBestLon)
         mLocationList.add(LatLongBean(mCurrentLatLng!!, speed))
         mMarkMyLocation!!.position = mCurrentLatLng
-        if (!isDrawing) {
-            drawRideTraceTotal()
-        }
+        drawRideTraceTotal()
 
 
     }
@@ -355,10 +367,8 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     /**
      * 实时定位展示运动轨迹
      */
-    private var isDrawing: Boolean = false
 
     private fun drawRideTraceTotal() {
-        this.isDrawing = true
         if (isTracking) {
             if (totalLine != null) {
                 totalLine!!.remove()
@@ -394,7 +404,6 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(mLocatinLat, mLocationLon)))
 
         }
-        this.isDrawing = false
 
     }
 
@@ -450,7 +459,38 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
 
     fun setTraceEnabled(enabled: Boolean) {
         isTracking = enabled
+        getTraceList()
     }
 
+
+    fun setLocationEnabled(enabled: Boolean) {
+        map.myLocationStyle = locationStyle
+        map.isMyLocationEnabled = enabled
+
+    }
+
+    private fun getTraceList() {
+        val todayZero = DateUtil.getTodayZero()
+        val userId = FileUtils.getSharedPreferences(context, "uid", "00000") as String
+        DataBaseOpenHelper.getInstance().queryValues(DataBaseOperateToken.TOKEN_QUERY_TABLE, false, DBConfig.TABLE_NAME, null, "uid = ? and locTime < ?", arrayOf(userId, todayZero.toString()), null, null, null, null, object : IQueryCallback {
+            override fun onQueryComplete(token: Int, cursor: Cursor) {
+                if (cursor != null) {
+                    while (cursor.moveToNext()) {
+                        mLocationList.
+                                add(LatLongBean(LatLng(cursor.getDouble(cursor.getColumnIndex(DBConfig.location.locLatitude))
+                                        , cursor.getDouble(cursor.getColumnIndex(DBConfig.location.locLongitude))), cursor.getFloat(cursor.getColumnIndex(DBConfig.location.speed))))
+                    }
+                    cursor.close()
+                }
+                Log.e("===location===", "size=" + mLocationList.size + ":uid=" + userId)
+                if (mLocationList.size > 0) {
+                    drawRideTraceTotal()
+                }
+            }
+
+            override fun onAsyncOperateFailed() {}
+        })
+
+    }
 }
 

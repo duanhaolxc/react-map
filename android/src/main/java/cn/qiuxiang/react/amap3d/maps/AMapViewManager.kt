@@ -67,6 +67,11 @@ internal class AMapViewManager : ViewGroupManager<AMapView>() {
         )
     }
 
+    @ReactProp(name = "locationEnabled")
+    fun setMyLocationEnabled(view: AMapView, enabled: Boolean) {
+        view.setLocationEnabled(enabled)
+    }
+
     @ReactProp(name = "showsIndoorMap")
     fun showIndoorMap(view: AMapView, show: Boolean) {
         view.map.showIndoorMap(show)
@@ -184,7 +189,7 @@ internal class AMapViewManager : ViewGroupManager<AMapView>() {
     fun changeRotation(view: AMapView, rotation: Float) {
         view.map.moveCamera(CameraUpdateFactory.changeBearing(rotation))
     }
-       @ReactProp(name = "showTrace")
+    @ReactProp(name = "showTrace")
     fun setTraceEnabled(view: AMapView, enabled: Boolean) {
         view.setTraceEnabled(enabled)
     }

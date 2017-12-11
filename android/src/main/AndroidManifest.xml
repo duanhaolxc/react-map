@@ -11,4 +11,23 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
+    <application  >
+        <receiver android:name=".location.NetStatusReceiver">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
+
+        <!--增加唤醒WorkService的定时任务-->
+        <receiver android:name=".location.MyLocationReciver">
+            <intent-filter>
+                <action android:name="location_in_background" />
+            </intent-filter>
+        </receiver>
+        <!--todo 自己业务保活的Service-->
+        <service
+            android:name="cn.qiuxiang.react.amap3d.location.service.MyLocationService"
+            ></service>
+
+    </application>
 </manifest>
