@@ -5,7 +5,7 @@ package cn.qiuxiang.react.amap3d.location.db;
  */
 
 public class DBConfig {
-    public static final String DBNAME = "location.db";
+    public static final String DBNAME = "engine_location.db";
     private static final String CREATE = "CREATE TABLE IF NOT EXISTS ";
     public static final String TABLE_NAME = "location_table";
     public static final String CREATE_TABLE = CREATE + TABLE_NAME + "(ID integer PRIMARY KEY AUTOINCREMENT, " +
