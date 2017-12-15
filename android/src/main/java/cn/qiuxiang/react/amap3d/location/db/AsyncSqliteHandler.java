@@ -3,6 +3,7 @@ package cn.qiuxiang.react.amap3d.location.db;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteDiskIOException;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -271,27 +272,33 @@ public class AsyncSqliteHandler extends Handler {
             int token = msg.what;
             int event = msg.arg1;
 
-            InsertSingleArgs insertSingleArgs;
+            InsertSingleArgs insertSingleArgs = null;
             InsertMultiArgs insertMultiArgs;
             QueryArgs queryArgs;
             UpdateArgs updateArgs;
             DeleteArgs deleteArgs;
             InitArgs initArgs;
 
-            Message reply;
+            Message reply = null;
             switch (event) {
                 case EVENT_ARG_SINGLE_INSERT:
-                    insertSingleArgs = (InsertSingleArgs) msg.obj;
-                    insertSingleArgs.result = insertSingleArgs.db.insertOrThrow(insertSingleArgs.table,
-                            insertSingleArgs.nullColumnHack, insertSingleArgs.values);
-                    if ((int) insertSingleArgs.result == -1) {
-                        Logger.e(TAG + " ---->> insert single args failed!");
-                        insertSingleArgs.result = FAIL;
-                    } else {
-                        insertSingleArgs.result = SUCCESS;
+                    try {
+                        insertSingleArgs = (InsertSingleArgs) msg.obj;
+                        insertSingleArgs.result = insertSingleArgs.db.insertOrThrow(insertSingleArgs.table,
+                                insertSingleArgs.nullColumnHack, insertSingleArgs.values);
+                        if ((int) insertSingleArgs.result == -1) {
+                            Logger.e(TAG + " ---->> insert single args failed!");
+                            insertSingleArgs.result = FAIL;
+                        } else {
+                            insertSingleArgs.result = SUCCESS;
+                        }
+                        reply = insertSingleArgs.handler.obtainMessage(token);
+                        reply.obj = insertSingleArgs;
+                    } catch (Exception e) {
+                        if (e instanceof SQLiteDiskIOException) {
+                            insertSingleArgs.db.close();
+                        }
                     }
-                    reply = insertSingleArgs.handler.obtainMessage(token);
-                    reply.obj = insertSingleArgs;
                     break;
                 case EVENT_ARG_MULTI_INSERT:
                     insertMultiArgs = (InsertMultiArgs) msg.obj;
@@ -392,7 +399,7 @@ public class AsyncSqliteHandler extends Handler {
             case EVENT_ARG_MULTI_INSERT:
                 InsertMultiArgs insertMultiArgs = (InsertMultiArgs) msg.obj;
                 if (insertMultiArgs.callback != null) {
-                    if (insertMultiArgs.result ==SUCCESS) {
+                    if (insertMultiArgs.result == SUCCESS) {
                         ((IMultiInsertCallback) insertMultiArgs.callback).onMultiInsertComplete(token, insertMultiArgs.result);
                     } else {
                         insertMultiArgs.callback.onAsyncOperateFailed();
