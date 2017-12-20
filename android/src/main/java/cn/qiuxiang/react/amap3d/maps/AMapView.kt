@@ -92,16 +92,6 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     init {
         super.onCreate(null)
         initLocation()
-        //注册receiver，接收Activity发送的广播，停止线程，停止service
-        val filter = IntentFilter()
-        filter.addAction("location_in_background")
-        locationReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val location = intent.getParcelableExtra<AMapLocation>("result")
-                onMyLocationChanged(location)
-            }
-        }
-        context.registerReceiver(locationReceiver, filter)
         map.setOnMapClickListener { latLng ->
             for (marker in markers.values) {
                 marker.active = false
@@ -432,7 +422,19 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             mMarkMyLocation!!.position = latlng
         }
     }
-
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        //注册receiver，接收Activity发送的广播，停止线程，停止service
+        val filter = IntentFilter()
+        filter.addAction("location_in_background")
+        locationReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val location = intent.getParcelableExtra<AMapLocation>("result")
+                onMyLocationChanged(location)
+            }
+        }
+        context.registerReceiver(locationReceiver, filter)
+    }
     private fun setMystartLoca(latlng: LatLng) {
         if (mMarkStartLocation != null) {
             return
