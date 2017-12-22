@@ -186,7 +186,6 @@ public class WsManager {
 
             long reconnectTime = minInterval;
             if (reconnectCount > 3) {
-                url = DEF_URL;
                 long temp = minInterval * (reconnectCount - 2);
                 reconnectTime = temp > maxInterval ? maxInterval : temp;
             }
