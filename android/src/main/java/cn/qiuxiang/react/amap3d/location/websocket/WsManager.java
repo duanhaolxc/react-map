@@ -37,7 +37,7 @@ public class WsManager {
     private static final int FRAME_QUEUE_SIZE = 5;
     private static final int CONNECT_TIMEOUT = 5000;
     private static final String DEF_TEST_URL = "ws://trace-pharos.ofo.com/ws?token=";//测试服默认地址
-    private static final String DEF_RELEASE_URL = "ws://trace.pharos.ofo.com/ws?token=";//正式服默认地址
+    private static final String DEF_RELEASE_URL = "ws://trace-pharos.ofo.com/ws?token=";//正式服默认地址
     private static final String DEF_URL = BuildConfig.DEBUG ? DEF_RELEASE_URL : DEF_RELEASE_URL;
     private String url;
     private WsStatus mStatus;
