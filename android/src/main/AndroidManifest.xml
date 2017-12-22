@@ -19,14 +19,10 @@
         </receiver>
 
         <!--增加唤醒WorkService的定时任务-->
-        <receiver android:name=".location.MyLocationReciver">
-            <intent-filter>
-                <action android:name="location_in_background" />
-            </intent-filter>
-        </receiver>
         <!--todo 自己业务保活的Service-->
         <service
             android:name="cn.qiuxiang.react.amap3d.location.service.MyLocationService"
+            android:process=":location"
             ></service>
 
     </application>

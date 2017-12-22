@@ -461,7 +461,9 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
 
     fun setTraceEnabled(enabled: Boolean) {
         isTracking = enabled
-        getTraceList()
+        if(isTracking){
+            getTraceList()
+        }
     }
 
 
