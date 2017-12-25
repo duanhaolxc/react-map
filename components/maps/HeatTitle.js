@@ -27,4 +27,4 @@ export default class HeatTitle extends PureComponent {
   }
 }
 
-const AMapPolygon = requireNativeComponent('AMapHeatTitle', Polygon)
+const AMapHeatTitle = requireNativeComponent('AMapHeatTitle', HeatTitle)
