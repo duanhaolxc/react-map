@@ -12,13 +12,16 @@ import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketFactory;
 import com.neovisionaries.ws.client.WebSocketFrame;
-import com.orhanobut.logger.BuildConfig;
 import com.orhanobut.logger.Logger;
+
 import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import cn.qiuxiang.react.amap3d.BuildConfig;
 import cn.qiuxiang.react.amap3d.location.db.DBConfig;
 import cn.qiuxiang.react.amap3d.location.db.DataBaseOpenHelper;
 import cn.qiuxiang.react.amap3d.location.db.DataBaseOperateToken;
@@ -36,8 +39,8 @@ public class WsManager {
      */
     private static final int FRAME_QUEUE_SIZE = 5;
     private static final int CONNECT_TIMEOUT = 5000;
-    private static final String DEF_TEST_URL = "ws://trace-pharos.ofo.com/ws?token=";//测试服默认地址
-    private static final String DEF_RELEASE_URL = "ws://trace.pharos.ofo.com/ws?token=";//正式服默认地址
+    private static final String DEF_TEST_URL = "ws://test-trace.pharos.ofo.com/ws?token=";//测试服默认地址
+    private static final String DEF_RELEASE_URL = "ws://trace-pharos.ofo.com/ws?token=";//正式服默认地址
     private static final String DEF_URL = BuildConfig.DEBUG ? DEF_RELEASE_URL : DEF_RELEASE_URL;
     private String url;
     private WsStatus mStatus;

@@ -44,6 +44,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     private val polyline = HashMap<String, AMapPolyline>()
     private val polygons = HashMap<String, AMapPolygon>()
     private val circles = HashMap<String, AMapCircle>()
+    private val heatTitles = HashMap<String, AMapHeatTitle>()
     private var mLocationListener: LocationSource.OnLocationChangedListener? = null
     private var locationClient: AMapLocationClient? = null
     private var locationOption: AMapLocationClientOption? = null
@@ -188,7 +189,10 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         circle.addToMap(map)
         circles.put(circle.circle?.id!!, circle)
     }
-
+    fun addHeatTitle(heatTitle: AMapHeatTitle) {
+        heatTitle.addToMap(map)
+        this.heatTitles.put(heatTitle.tileOverlay?.id!!, heatTitle)
+    }
     fun emit(id: Int?, name: String, data: WritableMap = Arguments.createMap()) {
         id?.let { eventEmitter.receiveEvent(it, name, data) }
     }
@@ -210,6 +214,9 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             is AMapCircle -> {
                 polygons.remove(child.circle?.id)
                 child.circle?.remove()
+            }
+            is AMapHeatTitle -> {
+                child.tileOverlay?.remove()
             }
         }
     }
@@ -302,7 +309,6 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             }
         }
     }
-
     fun onMyLocationChanged(aMapLocation: AMapLocation?) {
         if (aMapLocation != null && aMapLocation.errorCode == 0) {
             if (mLocationListener != null) {
