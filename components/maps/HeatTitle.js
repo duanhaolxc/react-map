@@ -2,7 +2,7 @@ import React, {PropTypes, PureComponent} from 'react'
 import {PixelRatio, Platform, requireNativeComponent, ViewPropTypes} from 'react-native'
 import {LatLng} from '../PropTypes'
 
-export default class Polygon extends PureComponent {
+export default class HeatTitle extends PureComponent {
   static propTypes = {
     ...ViewPropTypes,
 
