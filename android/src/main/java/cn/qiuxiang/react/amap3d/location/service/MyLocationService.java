@@ -44,9 +44,11 @@ public class MyLocationService extends Service implements AMapLocationListener {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String token = intent.getStringExtra("token");
-        uid = intent.getStringExtra("uid");
-        WsManager.getInstance().init(token);
+        if (intent != null && intent.hasExtra("token")) {
+            String token = intent.getStringExtra("token");
+            uid = intent.getStringExtra("uid");
+            WsManager.getInstance().init(token);
+        }
         startLocation();
         //注册receiver，接收Activity发送的广播，停止线程，停止service
         IntentFilter filter = new IntentFilter();
