@@ -12,24 +12,25 @@ import java.util.*
 
 
 class AMapHeatTitle(context: Context) : ReactViewGroup(context) {
-    var tileOverlay: TileOverlay? = null
+     var tileOverlay: TileOverlay? = null
         private set
 
-    private var coordinates: ArrayList<LatLng> = ArrayList()
+    private var coordinates: ArrayList<WeightedLatLng> = ArrayList()
 
     fun setCoordinates(coordinates: ReadableArray) {
         this.coordinates = ArrayList((0 until coordinates.size())
                 .map { coordinates.getMap(it) }
-                .map { LatLng(it.getDouble("latitude"), it.getDouble("longitude")) })
+                .map { WeightedLatLng(LatLng(it.getDouble("latitude"), it.getDouble("longitude")), it.getDouble("weight")) })
+        Log.e("AMapHeatTitle", this.coordinates.toString())
     }
 
     fun addToMap(map: AMap) {
         // 构建热力图 HeatmapTileProvider
         val builder = HeatmapTileProvider.Builder()
-        builder.data(coordinates)
+        builder.weightedData(coordinates)
         val heatmapTileProvider = builder.build()
         val tileOverlayOptions = TileOverlayOptions()
         tileOverlayOptions.tileProvider(heatmapTileProvider) // 设置瓦片图层的提供者
-        tileOverlay=map.addTileOverlay(tileOverlayOptions)
+        tileOverlay = map.addTileOverlay(tileOverlayOptions)
     }
 }
