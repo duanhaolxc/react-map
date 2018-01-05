@@ -12,10 +12,10 @@ import java.util.*
 
 
 class AMapHeatTitle(context: Context) : ReactViewGroup(context) {
-     var tileOverlay: TileOverlay? = null
+    var tileOverlay: TileOverlay? = null
         private set
 
-    private var coordinates: ArrayList<WeightedLatLng> = ArrayList()
+    private var coordinates: Collection<WeightedLatLng> = ArrayList()
 
     fun setCoordinates(coordinates: ReadableArray) {
         this.coordinates = ArrayList((0 until coordinates.size())
