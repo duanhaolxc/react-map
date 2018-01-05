@@ -1,11 +1,9 @@
 package cn.qiuxiang.react.amap3d.maps
 
 import android.content.Context
+import android.util.Log
 import com.amap.api.maps.AMap
-import com.amap.api.maps.model.HeatmapTileProvider
-import com.amap.api.maps.model.LatLng
-import com.amap.api.maps.model.TileOverlay
-import com.amap.api.maps.model.TileOverlayOptions
+import com.amap.api.maps.model.*
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.views.view.ReactViewGroup
 import java.util.*
