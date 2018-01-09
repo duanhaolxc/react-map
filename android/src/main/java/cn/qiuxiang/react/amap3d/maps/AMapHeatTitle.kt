@@ -26,6 +26,7 @@ class AMapHeatTitle(context: Context) : ReactViewGroup(context) {
         // 构建热力图 HeatmapTileProvider
         val builder = HeatmapTileProvider.Builder()
         builder.weightedData(coordinates)
+         builder.transparency(0.9)
         val heatmapTileProvider = builder.build()
         val tileOverlayOptions = TileOverlayOptions()
         tileOverlayOptions.tileProvider(heatmapTileProvider) // 设置瓦片图层的提供者
