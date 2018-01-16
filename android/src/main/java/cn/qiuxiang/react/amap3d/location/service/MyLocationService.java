@@ -173,7 +173,7 @@ public class MyLocationService extends Service implements AMapLocationListener {
             @Override
             public void onSingleInsertComplete(int token, long result) {
                 Logger.e(TAG, "插入成功:" + "token=" + token);
-                sendData(commonLocation);
+        
                 queryLocations(uid);
             }
 
