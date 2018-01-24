@@ -26,6 +26,7 @@ import cn.qiuxiang.react.amap3d.location.db.DBConfig;
 import cn.qiuxiang.react.amap3d.location.db.DataBaseOpenHelper;
 import cn.qiuxiang.react.amap3d.location.db.DataBaseOperateToken;
 import cn.qiuxiang.react.amap3d.location.db.IUpdateCallback;
+import cn.qiuxiang.react.amap3d.location.service.UploadThread;
 
 /**
  * Created by MSI on 2017/6/8.
@@ -41,7 +42,7 @@ public class WsManager {
     private static final int CONNECT_TIMEOUT = 5000;
     private static final String DEF_TEST_URL = "ws://test-trace.pharos.ofo.com/ws?token=";//测试服默认地址
     private static final String DEF_RELEASE_URL = "ws://trace-pharos.ofo.com/ws?token=";//正式服默认地址
-    private static final String DEF_URL = BuildConfig.DEBUG ? DEF_RELEASE_URL : DEF_RELEASE_URL;
+    private static final String DEF_URL = BuildConfig.DEBUG ? DEF_TEST_URL : DEF_TEST_URL;
     private String url;
     private WsStatus mStatus;
     private WebSocket ws;
@@ -89,14 +90,17 @@ public class WsManager {
         }
     }
 
+
     public void send(HashMap<String, Object> dict) {
         try {
             JSONObject obj = new JSONObject(dict);
             if (ws != null) {
+                Logger.e("send+正在发送");
                 ws.sendText(obj.toString());
             }
         } catch (Exception e) {
             e.printStackTrace();
+            Logger.e("send+发送失败");
         }
 
     }
@@ -121,7 +125,7 @@ public class WsManager {
         public void onConnected(WebSocket websocket, Map<String, List<String>> headers)
                 throws Exception {
             super.onConnected(websocket, headers);
-            Logger.t(TAG).d("连接成功");
+            Logger.e("连接成功");
             setStatus(WsStatus.CONNECT_SUCCESS);
             cancelReconnect();//连接成功的时候取消重连,初始化连接次数
         }
@@ -131,7 +135,7 @@ public class WsManager {
         public void onConnectError(WebSocket websocket, WebSocketException exception)
                 throws Exception {
             super.onConnectError(websocket, exception);
-            Logger.t(TAG).d("连接错误");
+            Logger.e("连接错误");
             setStatus(WsStatus.CONNECT_FAIL);
             reconnect();//连接错误的时候调用重连方法
         }
@@ -141,7 +145,7 @@ public class WsManager {
         public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer)
                 throws Exception {
             super.onDisconnected(websocket, serverCloseFrame, clientCloseFrame, closedByServer);
-            Logger.t(TAG).d("断开连接");
+            Logger.e("断开连接");
             setStatus(WsStatus.CONNECT_FAIL);
             reconnect();//连接断开的时候调用重连方法
         }
@@ -173,9 +177,10 @@ public class WsManager {
 
 
     public void reconnect() {
+        Logger.e("reconnect");
         if (!isNetConnect()) {
             reconnectCount = 0;
-            Logger.t(TAG).d("重连失败网络不可用");
+            Logger.e("重连失败网络不可用");
             return;
         }
 
@@ -194,7 +199,7 @@ public class WsManager {
                 reconnectTime = temp > maxInterval ? maxInterval : temp;
             }
 
-            Logger.t(TAG).d("准备开始第%d次重连,重连间隔%d -- url:%s", reconnectCount, reconnectTime, url);
+            Logger.e("System.out准备开始第%d次重连,重连间隔%d -- url:%s", reconnectCount, reconnectTime, url);
             mHandler.postDelayed(mReconnectTask, reconnectTime);
         }
     }
@@ -210,7 +215,9 @@ public class WsManager {
                         .setMissingCloseFrameAllowed(false)//设置不允许服务端关闭连接却未发送关闭帧
                         .addListener(mListener = new WsListener())//添加回调监听
                         .connectAsynchronously();//异步连接
+                Logger.e("重连成功mReconnectTask");
             } catch (IOException e) {
+                Logger.e("重连失败mReconnectTask");
                 e.printStackTrace();
             }
         }
@@ -232,29 +239,43 @@ public class WsManager {
                 // 当前网络是连接的
                 if (info.getState() == NetworkInfo.State.CONNECTED) {
                     // 当前所连接的网络可用
+                    Logger.e("当前网络可用");
                     return true;
                 }
             }
         }
+        Logger.e("当前网络不可用");
         return false;
     }
 
     private void updateDBLocation(String stautsInfo) {
         if (stautsInfo.contains("ACK")) {
             String id = stautsInfo.split("/")[1];
+            Logger.e("ACK_" + id);
             ContentValues values4 = new ContentValues();
             values4.put("isHasSend", 1);
+            synchronized (UploadThread.Companion.getLock()) {
+                // Logger.e("更新成功");
+                UploadThread.Companion.setStatus(1);
+                UploadThread.Companion.getLock().notify();
+            }
             DataBaseOpenHelper.getInstance().updateValues(DataBaseOperateToken.TOKEN_UPDATE_CURRENT_INFO, DBConfig.TABLE_NAME, values4, "ID=?", new String[]{id}, new IUpdateCallback() {
                 @Override
                 public void onUpdateComplete(int token, long result) {
-                    Logger.e(TAG, "更新成功");
+                    Logger.e("更新成功");
                 }
 
                 @Override
                 public void onAsyncOperateFailed() {
-                    Logger.e(TAG, "更新失败");
+                    Logger.e("更新失败");
                 }
             });
+        } else {
+            synchronized (UploadThread.Companion.getLock()) {
+                Logger.e("更新成功+但是可能之前没收到");
+                UploadThread.Companion.setStatus(0);
+                UploadThread.Companion.getLock().notify();
+            }
         }
     }
 }

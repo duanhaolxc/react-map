@@ -11,6 +11,12 @@ public class DBConfig {
     public static final String CREATE_TABLE = CREATE + TABLE_NAME + "(ID integer PRIMARY KEY AUTOINCREMENT, " +
             "locTime REAL,locLatitude REAL,locLongitude REAL,speed REAL,accuracy REAL,distance REAL,isHasSend integer,uid integer)";
 
+    //用于备份未上传的附表
+    public static final String TABLE_NAME_UPLOAD = "location_table_upload";
+    public static final String CREATE_TABLE_UPLOAD = CREATE + TABLE_NAME_UPLOAD + "(ID integer PRIMARY KEY AUTOINCREMENT, " +
+            "locTime REAL,locLatitude REAL,locLongitude REAL,speed REAL,accuracy REAL,distance REAL,isHasSend integer,uid integer)";
+
+
     public static final class location {
         public static final String id = "ID";
         public static final String locTime = "locTime"; // 定位时间 <long> 用于操作数据库

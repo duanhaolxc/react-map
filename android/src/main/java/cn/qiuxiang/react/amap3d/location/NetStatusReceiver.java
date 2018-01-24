@@ -18,6 +18,7 @@ public class NetStatusReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
+        Logger.e("网络切换");
         if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
             // 获取网络连接管理器
             ConnectivityManager connectivityManager

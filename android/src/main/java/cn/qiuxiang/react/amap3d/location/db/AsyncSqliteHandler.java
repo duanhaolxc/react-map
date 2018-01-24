@@ -49,6 +49,7 @@ public class AsyncSqliteHandler extends Handler {
         public String nullColumnHack;
         public ContentValues values;
         public long result;
+        public long id;
     }
 
     protected static final class InsertMultiArgs extends SqliteArgs {
@@ -286,6 +287,7 @@ public class AsyncSqliteHandler extends Handler {
                         insertSingleArgs = (InsertSingleArgs) msg.obj;
                         insertSingleArgs.result = insertSingleArgs.db.insertOrThrow(insertSingleArgs.table,
                                 insertSingleArgs.nullColumnHack, insertSingleArgs.values);
+                        insertSingleArgs.id = insertSingleArgs.result;
                         if ((int) insertSingleArgs.result == -1) {
                             Logger.e(TAG + " ---->> insert single args failed!");
                             insertSingleArgs.result = FAIL;
@@ -390,7 +392,7 @@ public class AsyncSqliteHandler extends Handler {
                 InsertSingleArgs insertSingleArgs = (InsertSingleArgs) msg.obj;
                 if (insertSingleArgs.callback != null) {
                     if (insertSingleArgs.result == SUCCESS) {
-                        ((ISingleInsertCallback) insertSingleArgs.callback).onSingleInsertComplete(token, insertSingleArgs.result);
+                        ((ISingleInsertCallback) insertSingleArgs.callback).onSingleInsertComplete(token, insertSingleArgs.result, (int) insertSingleArgs.id);
                     } else {
                         insertSingleArgs.callback.onAsyncOperateFailed();
                     }

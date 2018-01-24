@@ -41,13 +41,41 @@ public class MyLocationService extends Service implements AMapLocationListener {
     private AMapLocationClient mLocationClient;
     private String uid = "00000";
     private AMapLocationClientOption mLocationOption;
+    private Object lock = new Object();
+
+    private LocCache locCache = LocCache.Companion.getCache();
+
+    //设定如果1分钟之内的点都没有精确度<100,那么强制上传一次
+    private int INTERVAL_TIME = 60 * 1000;
+    //记录上次成功上传的时间
+    private long successTime;
+
+    private int ACCURACY_THRESHOLD = 100;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Logger.e("service启动onStartCommand");
+        if (!UploadThread.Companion.getThread().isAlive()) {
+            UploadThread.Companion.getThread().start();
+        }
         if (intent != null && intent.hasExtra("token")) {
             String token = intent.getStringExtra("token");
+            FileUtils.putSharedPreferences(this, "token", token);
             uid = intent.getStringExtra("uid");
+            FileUtils.putSharedPreferences(this, "uid", uid);
+            if (locCache.isEmpty()) {
+                queryLocations(uid);
+            }
             WsManager.getInstance().init(token);
+            Logger.e("初始化连接init + token" + token);
+        } else {
+            String token = (String) FileUtils.getSharedPreferences(this, "token", "0000");
+            String uid = (String) FileUtils.getSharedPreferences(this, "token", "0000");
+            if (locCache.isEmpty()) {
+                queryLocations(uid);
+            }
+            WsManager.getInstance().init(token);
+            Logger.e("初始化连接init + token" + token);
         }
         startLocation();
         //注册receiver，接收Activity发送的广播，停止线程，停止service
@@ -139,9 +167,18 @@ public class MyLocationService extends Service implements AMapLocationListener {
 
     @Override
     public void onLocationChanged(AMapLocation aMapLocation) {
-        if (aMapLocation.getErrorCode() == 0 && aMapLocation.getAccuracy() < 100) {
-            insertDBLocation(aMapLocation, this);
-            sendLocationBroadcast(aMapLocation);
+        if (aMapLocation.getErrorCode() == 0) {
+            if (aMapLocation.getAccuracy() < ACCURACY_THRESHOLD) {
+                successTime = System.currentTimeMillis();
+                insertDBLocation(aMapLocation, this);
+                sendLocationBroadcast(aMapLocation);
+            } else {
+                if (System.currentTimeMillis() - successTime > INTERVAL_TIME) {
+                    successTime = System.currentTimeMillis();
+                    insertDBLocation(aMapLocation, this);
+                    sendLocationBroadcast(aMapLocation);
+                }
+            }
         }
     }
 
@@ -168,13 +205,21 @@ public class MyLocationService extends Service implements AMapLocationListener {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        if (!UploadThread.Companion.getThread().isAlive()) {
+            UploadThread.Companion.getThread().start();
+        } else {
+            Logger.e("我还活着" + UploadThread.Companion.getThread().getName());
+        }
 
         DataBaseOpenHelper.getInstance().insertSingleValues(DataBaseOperateToken.TOKEN_INSERT_SINGLE_INFO, DBConfig.TABLE_NAME, null, contentValues, new ISingleInsertCallback() {
             @Override
-            public void onSingleInsertComplete(int token, long result) {
-                Logger.e(TAG, "插入成功:" + "token=" + token);
-        
-                queryLocations(uid);
+            public void onSingleInsertComplete(int token, long result, int id) {
+                Logger.e("插入成功:" + "token=" + token + "result=" + result);
+              /*  sendData(commonLocation);
+                queryLocations(uid);*/
+                commonLocation.setId(id);
+                locCache.addElement(commonLocation);
+                Logger.e("插入成功" + commonLocation.getId() + "上传成功");
             }
 
             @Override
@@ -183,6 +228,22 @@ public class MyLocationService extends Service implements AMapLocationListener {
             }
         });
     }
+
+
+    private void sendData(CommonLocation loc) {
+        HashMap<String, Object> dict = new HashMap<>();
+        dict.put("id", loc.getId());
+        Logger.e("send data" + loc.getId());
+        dict.put("platform", "android");
+        dict.put("lat", loc.getLatitude());
+        dict.put("lng", loc.getLongitude());
+        dict.put("speed", loc.getSpeed());
+        dict.put("accuracy", loc.getAccuracy());
+        dict.put("timestamp", loc.getTime());
+        WsManager.getInstance().send(dict);
+
+    }
+
 
     private void queryLocations(String uid) {
         long todayZero = DateUtil.getTodayZero();
@@ -196,6 +257,9 @@ public class MyLocationService extends Service implements AMapLocationListener {
             @Override
             public void onAsyncOperateFailed() {
                 Logger.e(TAG, "查询失败");
+               /* synchronized (lock) {
+                    lock.notify();
+                }*/
             }
         });
     }
@@ -204,23 +268,14 @@ public class MyLocationService extends Service implements AMapLocationListener {
         if (cursor != null) {
             while (cursor.moveToNext()) {
                 CommonLocation commonLocation = CommonLocation.queryLocationItem(cursor);
-                sendData(commonLocation);
+                LocCache.Companion.getCache().addElement(commonLocation);
+                Logger.t("数据库");
             }
             cursor.close();
         }
-    }
-
-    private void sendData(CommonLocation loc) {
-        HashMap<String, Object> dict = new HashMap<>();
-        dict.put("id", loc.getId());
-        dict.put("platform", "android");
-        dict.put("lat", loc.getLatitude());
-        dict.put("lng", loc.getLongitude());
-        dict.put("speed", loc.getSpeed());
-        dict.put("accuracy", loc.getAccuracy());
-        dict.put("timestamp", loc.getTime());
-        WsManager.getInstance().send(dict);
-
+       /* synchronized (lock) {
+            lock.notify();
+        }*/
     }
 
 }
