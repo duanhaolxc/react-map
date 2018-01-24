@@ -46,7 +46,7 @@ public class MyLocationService extends Service implements AMapLocationListener {
     private LocCache locCache = LocCache.Companion.getCache();
 
     //设定如果1分钟之内的点都没有精确度<100,那么强制上传一次
-    private int INTERVAL_TIME = 60 * 1000;
+    private int INTERVAL_TIME = 30 * 1000;
     //记录上次成功上传的时间
     private long successTime;
 
