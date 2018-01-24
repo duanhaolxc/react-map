@@ -51,7 +51,7 @@ class UploadThread : Thread {
                     }
                 }
             }
-            ///Thread.sleep(100)
+            Thread.sleep(100)
             // print("我在等待~\n")
         }
     }
