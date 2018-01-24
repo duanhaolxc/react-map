@@ -230,21 +230,6 @@ public class MyLocationService extends Service implements AMapLocationListener {
     }
 
 
-    private void sendData(CommonLocation loc) {
-        HashMap<String, Object> dict = new HashMap<>();
-        dict.put("id", loc.getId());
-        Logger.e("send data" + loc.getId());
-        dict.put("platform", "android");
-        dict.put("lat", loc.getLatitude());
-        dict.put("lng", loc.getLongitude());
-        dict.put("speed", loc.getSpeed());
-        dict.put("accuracy", loc.getAccuracy());
-        dict.put("timestamp", loc.getTime());
-        WsManager.getInstance().send(dict);
-
-    }
-
-
     private void queryLocations(String uid) {
         long todayZero = DateUtil.getTodayZero();
         DataBaseOpenHelper.getInstance().queryValues(DataBaseOperateToken.TOKEN_QUERY_TABLE, false, DBConfig.TABLE_NAME, null, "isHasSend = ? and uid = ? and locTime < ?", new String[]{String.valueOf(0), uid, String.valueOf(todayZero)}, null, null, "locTime", null, new IQueryCallback() {
