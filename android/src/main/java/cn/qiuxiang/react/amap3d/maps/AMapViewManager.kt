@@ -55,10 +55,7 @@ internal class AMapViewManager : ViewGroupManager<AMapView>() {
         parent.remove(parent.getChildAt(index))
         super.removeViewAt(parent, index)
     }
- @ReactProp(name = "locationCenterEnabled")
-    fun setMyLocationCenterEnabled(view: AMapView, enabled: Boolean) {
-        view.setLocationCenterEnabled(enabled)
-    }
+
     override fun getExportedCustomDirectEventTypeConstants(): Map<String, Any> {
         return MapBuilder.of(
                 "onPress", MapBuilder.of("registrationName", "onPress"),
