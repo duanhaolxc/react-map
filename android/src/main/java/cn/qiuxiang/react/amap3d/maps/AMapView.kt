@@ -480,14 +480,6 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
 
     }
 
-    fun setLocationCenterEnabled(enabled: Boolean) {
-        if (enabled) {
-            locationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_FOLLOW)
-        } else {
-            locationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_FOLLOW_NO_CENTER)
-        }
-        map.myLocationStyle = locationStyle
-    }
 
     private fun getTraceList() {
         val todayZero = DateUtil.getTodayZero()
