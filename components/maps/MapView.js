@@ -47,7 +47,7 @@ export default class MapView extends BaseComponent {
      * TODO: 似乎并不能正常显示
      */
     showsIndoorSwitch: PropTypes.bool,
-
+    locationCenterEnabled: PropTypes.bool,
     /**
      * 是否显示3D建筑
      */
