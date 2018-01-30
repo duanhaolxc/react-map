@@ -119,7 +119,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         }
         map.setOnMarkerClickListener { marker ->
             emit(markers[marker.id]?.id, "onPress")
-            false
+            true
         }
 
         map.setOnMarkerDragListener(object : AMap.OnMarkerDragListener {
