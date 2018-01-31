@@ -475,6 +475,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
 
 
     fun setLocationEnabled(enabled: Boolean) {
+        locationStyle.showMyLocation(true)
         map.myLocationStyle = locationStyle
         map.isMyLocationEnabled = enabled
 
