@@ -12,11 +12,17 @@ export default class BaseComponent extends PureComponent {
    *
    * @private
    */
-  _sendCommand(command: string, params?: []) {
-    UIManager.dispatchViewManagerCommand(
-      findNodeHandle(this),
-      UIManager[this.name].Commands[command],
-      params,
-    )
+   _sendCommand(command: string, params?: []) {
+    try {
+      if (findNodeHandle(this)) {
+        UIManager.dispatchViewManagerCommand(
+          findNodeHandle(this),
+          UIManager[this.name].Commands[command],
+          params,
+        ) 
+      }
+    } catch(e) {
+    
+    }
   }
 }
