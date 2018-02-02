@@ -59,7 +59,6 @@ public class MyLocationService extends Service implements AMapLocationListener {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Logger.t("轨迹上传").d("service启动onStartCommand");
         if (!UploadThread.Companion.getThread().isAlive()) {
             UploadThread.Companion.getThread().start();
         }
@@ -72,7 +71,6 @@ public class MyLocationService extends Service implements AMapLocationListener {
                 queryLocations(uid);
             }
             WsManager.getInstance().init(token);
-            Logger.t("轨迹上传").d("初始化连接init + token" + token);
         } else {
             String token = (String) FileUtils.getSharedPreferences(this, "token", "0000");
             String uid = (String) FileUtils.getSharedPreferences(this, "token", "0000");
@@ -80,7 +78,6 @@ public class MyLocationService extends Service implements AMapLocationListener {
                 queryLocations(uid);
             }
             WsManager.getInstance().init(token);
-            Logger.t("轨迹上传").d("初始化连接init + token" + token);
         }
         startLocation();
         //注册receiver，接收Activity发送的广播，停止线程，停止service
@@ -90,23 +87,11 @@ public class MyLocationService extends Service implements AMapLocationListener {
         return START_STICKY;
     }
 
-    FileOutputStream outStream = null;
     BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String sdCardDir = Environment.getExternalStorageDirectory().getAbsolutePath();
-            File saveFile = new File(sdCardDir, System.currentTimeMillis() + "aaaa.txt");
-
-            try {
-                outStream = new FileOutputStream(saveFile);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-            queryAllLocations(uid);
-
-            //stopSelf();//在service中停止service
-            //暂时注释下班清理数据库逻辑
-            //deleteUserLocations();
+            stopSelf();//在service中停止service
+            deleteUserLocations();
         }
     };
 
@@ -173,7 +158,6 @@ public class MyLocationService extends Service implements AMapLocationListener {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Logger.t("轨迹上传").d("MyLocationService", "onDestroy");
         stopLocation();
         unregisterReceiver(broadcastReceiver);
     }
@@ -228,40 +212,20 @@ public class MyLocationService extends Service implements AMapLocationListener {
         if (!UploadThread.Companion.getThread().isAlive()) {
             UploadThread.Companion.getThread().start();
         } else {
-            Logger.t("轨迹上传").d("active" + UploadThread.Companion.getThread().getName());
+           // Logger.t("轨迹上传").d("active" + UploadThread.Companion.getThread().getName());
         }
 
         DataBaseOpenHelper.getInstance().insertSingleValues(DataBaseOperateToken.TOKEN_INSERT_SINGLE_INFO, DBConfig.TABLE_NAME, null, contentValues, new ISingleInsertCallback() {
             @Override
             public void onSingleInsertComplete(int token, long result, int id) {
-                Logger.t("轨迹上传").d("插入成功:" + "token=" + token + "result=" + result);
               /*  sendData(commonLocation);
                 queryLocations(uid);*/
                 commonLocation.setId(id);
                 locCache.addElement(commonLocation);
-                Logger.t("轨迹上传").d("插入成功" + commonLocation.getId() + "上传成功");
             }
 
             @Override
             public void onAsyncOperateFailed() {
-                Logger.t("轨迹上传").d(TAG, "插入失败");
-            }
-        });
-    }
-
-    private void queryAllLocations(String uid) { //包含已上传
-        long todayZero = DateUtil.getTodayZero();
-        DataBaseOpenHelper.getInstance().queryValues(DataBaseOperateToken.TOKEN_QUERY_TABLE, false, DBConfig.TABLE_NAME, null, "uid = ? and locTime < ?", new String[]{uid, String.valueOf(todayZero)}, null, null, "locTime", null, new IQueryCallback() {
-            @Override
-            public void onQueryComplete(int token, Cursor cursor) {
-                getAllInfo(cursor);
-            }
-
-            @Override
-            public void onAsyncOperateFailed() {
-               /* synchronized (lock) {
-                    lock.notify();
-                }*/
             }
         });
     }
@@ -271,13 +235,11 @@ public class MyLocationService extends Service implements AMapLocationListener {
         DataBaseOpenHelper.getInstance().queryValues(DataBaseOperateToken.TOKEN_QUERY_TABLE, false, DBConfig.TABLE_NAME, null, "isHasSend = ? and uid = ? and locTime < ?", new String[]{String.valueOf(0), uid, String.valueOf(todayZero)}, null, null, "locTime", null, new IQueryCallback() {
             @Override
             public void onQueryComplete(int token, Cursor cursor) {
-                Logger.t("轨迹上传").d(TAG, "查询成功:" + "token=" + token);
                 getAllInfo(cursor);
             }
 
             @Override
             public void onAsyncOperateFailed() {
-                Logger.t("轨迹上传").d(TAG, "查询失败");
                /* synchronized (lock) {
                     lock.notify();
                 }*/
@@ -290,25 +252,8 @@ public class MyLocationService extends Service implements AMapLocationListener {
             while (cursor.moveToNext()) {
                 CommonLocation commonLocation = CommonLocation.queryLocationItem(cursor);
                 LocCache.Companion.getCache().addElement(commonLocation);
-                if (outStream != null) {
-                    try {
-                        outStream.write(commonLocation.toString().getBytes());
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
             cursor.close();
-            if (outStream != null) {
-                try {
-                    outStream.close();
-                    stopSelf();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
         }
        /* synchronized (lock) {
             lock.notify();

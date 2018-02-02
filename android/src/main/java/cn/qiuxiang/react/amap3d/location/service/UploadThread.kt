@@ -36,7 +36,6 @@ class UploadThread : Thread {
                 var time = System.currentTimeMillis()
                 val upload = cache.pollElement()
                 if (upload != null) {
-                    Logger.t("轨迹上传").d("正在上传+${upload.id}+timestamp:$time\n")
                     synchronized(UploadThread.lock) {
                         sendData(upload)
                         UploadThread.lock.wait(WAIT_TIMEOUT)
