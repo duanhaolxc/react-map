@@ -21,13 +21,13 @@ class LocCache {
     }
 
     private constructor() {
-        Logger.e("单例创建")
+        Logger.t("轨迹上传").d("单例创建")
     }
 
 
     fun addElement(commonLocation: CommonLocation) {
         synchronized(this) {
-            Logger.e("${indexQueue.size}我的尺寸~+${commonLocation.time}")
+            Logger.t("轨迹上传").d("${indexQueue.size}我的尺寸~+${commonLocation.time}")
             tail += 1
             //locations[commonLocation.time] = commonLocation
             indexQueue.add(commonLocation)

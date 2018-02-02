@@ -24,7 +24,6 @@ class UploadThread : Thread {
 
     private constructor() {
         //todo query数据库
-        Logger.e("进程创建")
     }
 
     var time = System.currentTimeMillis()
@@ -32,20 +31,20 @@ class UploadThread : Thread {
 
     override fun run() {
         while (true) {
-            //Logger.e("${cache.length()}+cache长度")
+            //Logger.t("轨迹上传").d("${cache.length()}+cache长度")
             while (!cache.isEmpty()) {
                 var time = System.currentTimeMillis()
                 val upload = cache.pollElement()
                 if (upload != null) {
-                    Logger.e("正在上传+${upload.id}+timestamp:$time\n")
+                    Logger.t("轨迹上传").d("正在上传+${upload.id}+timestamp:$time\n")
                     synchronized(UploadThread.lock) {
                         sendData(upload)
                         UploadThread.lock.wait(WAIT_TIMEOUT)
                         if (UploadThread.status == 1) {
-                            Logger.e("${upload.id}上传完毕\n+timestamp:${System.currentTimeMillis() - time}\n")
-                            Logger.e("${cache.removeElement()?.id}的点已被移除")
+                            Logger.t("轨迹上传").d("${upload.id}上传完毕\n+timestamp:${System.currentTimeMillis() - time}\n")
+                            Logger.t("轨迹上传").d("${cache.removeElement()?.id}的点已被移除")
                         } else {
-                            Logger.e("${upload.id}上传失败\n+timestamp:${System.currentTimeMillis() - time}\n")
+                            Logger.t("轨迹上传").d("${upload.id}上传失败\n+timestamp:${System.currentTimeMillis() - time}\n")
                             WsManager.getInstance().reconnect()
                         }
                     }
@@ -61,7 +60,7 @@ class UploadThread : Thread {
         UploadThread.status = 0
         val dict = HashMap<String, Any>()
         dict["id"] = loc.id
-        Logger.e("发送Id${loc.id}")
+        Logger.t("轨迹上传").d("发送Id${loc.id}")
         dict["platform"] = "android"
         dict["lat"] = loc.latitude
         dict["lng"] = loc.longitude
