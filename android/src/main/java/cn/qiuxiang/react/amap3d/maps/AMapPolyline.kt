@@ -12,6 +12,7 @@ import com.amap.api.maps.model.Polyline
 import com.amap.api.maps.model.PolylineOptions
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.views.view.ReactViewGroup
+
 class AMapPolyline(context: Context) : ReactViewGroup(context) {
     var polyline: Polyline? = null
         private set
@@ -109,9 +110,9 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                 }
 
             }
-            val mpathSmoothTool = PathSmoothTool()
-            mpathSmoothTool.intensity = 3
-            polyline?.points = mpathSmoothTool.pathOptimize(polylineOptions!!)
+            /*   val mpathSmoothTool = PathSmoothTool()
+               mpathSmoothTool.intensity = 3*/
+            polyline?.points = polylineOptions!!
         }
     }
 

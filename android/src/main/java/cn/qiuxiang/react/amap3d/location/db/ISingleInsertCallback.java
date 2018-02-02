@@ -7,5 +7,5 @@ public interface ISingleInsertCallback extends IAsyncHandlerCallback {
     /**
      * 单条插入成功
      */
-    void onSingleInsertComplete(int token, long result);
+    void onSingleInsertComplete(int token, long result,int id);
 }
