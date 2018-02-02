@@ -81,13 +81,13 @@ class AMapPolyline(context: Context) : ReactViewGroup(context) {
                 .geodesic(geodesic)
                 .setDottedLine(dashed)
                 .zIndex(zIndex))
-        val b = LatLngBounds.builder()
-        if (polylineOptions != null) {
-            polylineOptions!!.indices
-                    .map { polylineOptions!![it] }
-                    .forEach { b.include(it) }
-            map.moveCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 50))
-        }
+//         val b = LatLngBounds.builder()
+//         if (polylineOptions != null) {
+//             polylineOptions!!.indices
+//                     .map { polylineOptions!![it] }
+//                     .forEach { b.include(it) }
+//             map.moveCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 50))
+//         }
     }
 
     private fun fixPolyLines() {

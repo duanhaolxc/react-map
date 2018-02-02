@@ -57,6 +57,6 @@ class AMapPolygon(context: Context) : ReactViewGroup(context) {
                 .strokeWidth(strokeWidth)
                 .fillColor(fillColor)
                 .zIndex(zIndex))
-        MapTools().getLatLngBounds(coordinates,map)
+//         MapTools().getLatLngBounds(coordinates,map)
     }
 }

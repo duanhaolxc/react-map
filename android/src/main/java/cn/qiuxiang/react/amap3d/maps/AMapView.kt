@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.database.Cursor
 import android.graphics.Color
-import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -90,6 +89,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
 
     }
 
+
     init {
         super.onCreate(null)
         initLocation()
@@ -109,9 +109,17 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             event.putDouble("longitude", latLng.longitude)
             emit(id, "onLongPress", event)
         }
+
+        map.setOnMyLocationChangeListener { location ->
+            val event = Arguments.createMap()
+            event.putDouble("latitude", location.latitude)
+            event.putDouble("longitude", location.longitude)
+            event.putDouble("accuracy", location.accuracy.toDouble())
+            emit(id, "onLocation", event)
+        }
         map.setOnMarkerClickListener { marker ->
             emit(markers[marker.id]?.id, "onPress")
-            false
+            true
         }
 
         map.setOnMarkerDragListener(object : AMap.OnMarkerDragListener {
@@ -170,6 +178,20 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         }
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        //注册receiver，接收Activity发送的广播，停止线程，停止service
+        val filter = IntentFilter()
+        filter.addAction("location_in_background")
+        locationReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val location = intent.getParcelableExtra<AMapLocation>("result")
+                onMyLocationChanged(location)
+            }
+        }
+        context.registerReceiver(locationReceiver, filter)
+    }
+
     fun addMarker(marker: AMapMarker) {
         marker.addToMap(map)
         markers.put(marker.marker?.id!!, marker)
@@ -178,6 +200,11 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
     fun addPolyline(polyline: AMapPolyline) {
         polyline.addToMap(map)
         this.polyline.put(polyline.polyline?.id!!, polyline)
+    }
+
+    fun addHeatTitle(heatTitle: AMapHeatTitle) {
+        heatTitle.addToMap(map)
+        this.heatTitles.put(heatTitle.tileOverlay?.id!!, heatTitle)
     }
 
     fun addPolygon(polygon: AMapPolygon) {
@@ -189,10 +216,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         circle.addToMap(map)
         circles.put(circle.circle?.id!!, circle)
     }
-    fun addHeatTitle(heatTitle: AMapHeatTitle) {
-        heatTitle.addToMap(map)
-        this.heatTitles.put(heatTitle.tileOverlay?.id!!, heatTitle)
-    }
+
     fun emit(id: Int?, name: String, data: WritableMap = Arguments.createMap()) {
         id?.let { eventEmitter.receiveEvent(it, name, data) }
     }
@@ -202,6 +226,9 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             is AMapMarker -> {
                 markers.remove(child.marker?.id)
                 child.marker?.destroy()
+            }
+            is AMapHeatTitle -> {
+                child.tileOverlay?.remove()
             }
             is AMapPolyline -> {
                 polyline.remove(child.polyline?.id)
@@ -214,9 +241,6 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             is AMapCircle -> {
                 polygons.remove(child.circle?.id)
                 child.circle?.remove()
-            }
-            is AMapHeatTitle -> {
-                child.tileOverlay?.remove()
             }
         }
     }
@@ -299,9 +323,9 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             mLocationLon = aMapLocation.longitude
             if (mIsFirstLocation) {
                 mIsFirstLocation = false
-                if (mLocationList.size>0){
-                    setMyStopLoca(mLocationList[mLocationList.size-1].latLong)
-                }else{
+                if (mLocationList.size > 0) {
+                    setMyStopLoca(mLocationList[mLocationList.size - 1].latLong)
+                } else {
                     setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
                 }
 
@@ -309,6 +333,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             }
         }
     }
+
     fun onMyLocationChanged(aMapLocation: AMapLocation?) {
         if (aMapLocation != null && aMapLocation.errorCode == 0) {
             if (mLocationListener != null) {
@@ -318,9 +343,9 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             mLocationLon = aMapLocation.longitude
             if (mIsFirstLocation) {
                 mIsFirstLocation = false
-                if (mLocationList.size>0){
-                    setMyStopLoca(mLocationList[mLocationList.size-1].latLong)
-                }else{
+                if (mLocationList.size > 0) {
+                    setMyStopLoca(mLocationList[mLocationList.size - 1].latLong)
+                } else {
                     setMyStopLoca(LatLng(mLocatinLat, mLocationLon))
                 }
                 mLocationList.add(LatLongBean(LatLng(mLocatinLat, mLocationLon), aMapLocation.speed))
@@ -378,17 +403,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             locationList.addAll(PathSmooth().pathOptimize(mLocationList)!!)
             for (i in locationList.indices) {
                 pathSmoothList.add(locationList[i].latLong)
-                if (locationList[i].speed < 2f) {
-                    colorList.add(colorList.size, WalkUtil.getColorList(context)[0])
-                } else if (locationList[i].speed > 2 && locationList[i].speed < 5f) {
-                    colorList.add(colorList.size, WalkUtil.getColorList(context)[1])
-                } else if (locationList[i].speed > 5 && locationList[i].speed < 7f) {
-                    colorList.add(colorList.size, WalkUtil.getColorList(context)[2])
-                } else if (locationList[i].speed > 7 && locationList[i].speed < 9f) {
-                    colorList.add(colorList.size, WalkUtil.getColorList(context)[3])
-                } else {
-                    colorList.add(colorList.size, WalkUtil.getColorList(context)[4])
-                }
+                colorList.add(colorList.size, WalkUtil.getColorList(context)[0])
             }
             polylineOptions.addAll(pathSmoothList)
             polylineOptions.visible(true).width(15f).zIndex(10f)
@@ -428,19 +443,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             mMarkMyLocation!!.position = latlng
         }
     }
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        //注册receiver，接收Activity发送的广播，停止线程，停止service
-        val filter = IntentFilter()
-        filter.addAction("location_in_background")
-        locationReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val location = intent.getParcelableExtra<AMapLocation>("result")
-                onMyLocationChanged(location)
-            }
-        }
-        context.registerReceiver(locationReceiver, filter)
-    }
+
     private fun setMystartLoca(latlng: LatLng) {
         if (mMarkStartLocation != null) {
             return
@@ -467,17 +470,17 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
 
     fun setTraceEnabled(enabled: Boolean) {
         isTracking = enabled
-        if(isTracking){
-            getTraceList()
-        }
+        getTraceList()
     }
 
 
     fun setLocationEnabled(enabled: Boolean) {
+        locationStyle.showMyLocation(true)
         map.myLocationStyle = locationStyle
         map.isMyLocationEnabled = enabled
 
     }
+
 
     private fun getTraceList() {
         val todayZero = DateUtil.getTodayZero()
@@ -492,7 +495,6 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
                     }
                     cursor.close()
                 }
-                Log.e("===location===", "size=" + mLocationList.size + ":uid=" + userId)
                 if (mLocationList.size > 0) {
                     drawRideTraceTotal()
                 }
@@ -502,5 +504,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         })
 
     }
+
+
 }
 
