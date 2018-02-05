@@ -66,6 +66,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         locationStyle.radiusFillColor(Color.argb(0, 0, 0, 0))// 设置圆形的填充颜色
         locationStyle.strokeWidth(0f)// 设置圆形的边框粗细
         locationStyle.anchor(0.5f, 0.9f)
+        locationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_SHOW)
         locationStyle
     }
 
@@ -470,6 +471,9 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
 
     fun setTraceEnabled(enabled: Boolean) {
         isTracking = enabled
+        if (isTracking) {
+            locationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_MAP_ROTATE)
+        }
         getTraceList()
     }
 
@@ -489,9 +493,8 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
             override fun onQueryComplete(token: Int, cursor: Cursor) {
                 if (cursor != null) {
                     while (cursor.moveToNext()) {
-                        mLocationList.
-                                add(LatLongBean(LatLng(cursor.getDouble(cursor.getColumnIndex(DBConfig.location.locLatitude))
-                                        , cursor.getDouble(cursor.getColumnIndex(DBConfig.location.locLongitude))), cursor.getFloat(cursor.getColumnIndex(DBConfig.location.speed))))
+                        mLocationList.add(LatLongBean(LatLng(cursor.getDouble(cursor.getColumnIndex(DBConfig.location.locLatitude))
+                                , cursor.getDouble(cursor.getColumnIndex(DBConfig.location.locLongitude))), cursor.getFloat(cursor.getColumnIndex(DBConfig.location.speed))))
                     }
                     cursor.close()
                 }
