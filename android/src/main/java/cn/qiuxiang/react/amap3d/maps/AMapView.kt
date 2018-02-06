@@ -66,7 +66,7 @@ class AMapView(context: Context) : TextureMapView(context), LocationSource, AMap
         locationStyle.radiusFillColor(Color.argb(0, 0, 0, 0))// 设置圆形的填充颜色
         locationStyle.strokeWidth(0f)// 设置圆形的边框粗细
         locationStyle.anchor(0.5f, 0.9f)
-        locationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE_NO_CENTER)
+        locationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_SHOW)
         locationStyle
     }
 
