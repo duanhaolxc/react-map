@@ -166,9 +166,13 @@ internal class AMapViewManager : ViewGroupManager<AMapView>() {
 
     @ReactProp(name = "coordinate")
     fun moveToCoordinate(view: AMapView, coordinate: ReadableMap) {
-        view.map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(
-                coordinate.getDouble("latitude"),
-                coordinate.getDouble("longitude"))))
+          try {
+            view.map.moveCamera(CameraUpdateFactory.changeLatLng(LatLng(
+                    coordinate.getDouble("latitude"),
+                    coordinate.getDouble("longitude"))))
+        }catch (e:Exception){
+            e.printStackTrace()
+        }
     }
 
     @ReactProp(name = "coordinates")
